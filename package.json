@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:gh-pages": "vite build --mode production --base /Design-ventilation/"
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",

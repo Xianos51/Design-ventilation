@@ -1,0 +1,21 @@
+{
+  "name": "design-ventilation",
+  "version": "1.0.0",
+  "description": "Application web pour le calcul automatique des besoins en ventilation",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "vite": "^4.4.9"
+  },
+  "keywords": ["ventilation", "HVAC", "design", "calculation"],
+  "author": "",
+  "license": "MIT"
+}

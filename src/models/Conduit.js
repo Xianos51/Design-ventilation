@@ -1,17 +1,15 @@
 /**
  * Classe représentant un conduit de ventilation
  */
-import { Element } from './Element.js';
-import { Point } from './Point.js';
 
 // Diamètres commerciaux standard pour les conduits ronds (en mm)
-export const STANDARD_DIAMETERS = [
+window.STANDARD_DIAMETERS = [
     80, 100, 125, 140, 160, 180, 200, 225, 250, 280, 315, 355, 400, 450, 500, 
     560, 630, 710, 800, 900, 1000, 1120, 1250, 1400, 1600
 ];
 
 // Dimensions standard pour les conduits rectangulaires (en mm)
-export const STANDARD_RECT_SIZES = [
+window.STANDARD_RECT_SIZES = [
     { width: 100, height: 50 },
     { width: 125, height: 60 },
     { width: 160, height: 80 },
@@ -26,15 +24,15 @@ export const STANDARD_RECT_SIZES = [
     { width: 1250, height: 630 }
 ];
 
-export class Conduit extends Element {
+window.Conduit = class Conduit extends window.Element {
     static nextId = 1;
     static prefix = 'S';
 
     constructor(startX, startY, endX, endY, isRound = true) {
         super((startX + endX) / 2, (startY + endY) / 2);
-        this.id = `${Conduit.prefix}${Conduit.nextId++}`;
-        this.start = new Point(startX, startY);
-        this.end = new Point(endX, endY);
+        this.id = `${window.Conduit.prefix}${window.Conduit.nextId++}`;
+        this.start = new window.Point(startX, startY);
+        this.end = new window.Point(endX, endY);
         this.isRound = isRound; // true = rond, false = rectangulaire
         this.type = 'conduit';
         this.flowRate = 0; // m³/h - débit dans le conduit
@@ -305,7 +303,7 @@ export class Conduit extends Element {
      * @returns {Point} Point central
      */
     getCenter() {
-        return new Point((this.start.x + this.end.x) / 2, (this.start.y + this.end.y) / 2);
+        return new window.Point((this.start.x + this.end.x) / 2, (this.start.y + this.end.y) / 2);
     }
 
     /**
@@ -396,7 +394,7 @@ export class Conduit extends Element {
      * @returns {Conduit} Le conduit créé
      */
     static fromJSON(data) {
-        const conduit = new Conduit(
+        const conduit = new window.Conduit(
             data.start.x, data.start.y,
             data.end.x, data.end.y,
             data.isRound
@@ -416,7 +414,7 @@ export class Conduit extends Element {
         conduit.startElementId = data.startElementId || null;
         conduit.endElementId = data.endElementId || null;
         conduit.controlPoints = data.controlPoints 
-            ? data.controlPoints.map(p => Point.fromJSON(p))
+            ? data.controlPoints.map(p => window.Point.fromJSON(p))
             : [];
         conduit.connections = [...data.connections];
         
@@ -427,6 +425,6 @@ export class Conduit extends Element {
      * Réinitialise le compteur d'IDs
      */
     static resetIdCounter() {
-        Conduit.nextId = 1;
+        window.Conduit.nextId = 1;
     }
-}
+};

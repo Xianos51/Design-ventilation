@@ -1,16 +1,15 @@
 /**
  * Classe représentant un caisson de ventilation
  */
-import { Element } from './Element.js';
 
-export class Caisson extends Element {
+window.Caisson = class Caisson extends window.Element {
     static nextId = 1;
     static prefix = 'C';
 
     constructor(x, y) {
         super(x, y);
-        this.id = `${Caisson.prefix}${Caisson.nextId++}`;
-        this.name = `Caisson ${Caisson.nextId - 1}`;
+        this.id = `${window.Caisson.prefix}${window.Caisson.nextId++}`;
+        this.name = `Caisson ${window.Caisson.nextId - 1}`;
         this.width = 60;
         this.height = 60;
         this.flowRate = 0; // m³/h - sera calculé
@@ -215,7 +214,7 @@ export class Caisson extends Element {
      * @returns {Caisson} Le caisson créé
      */
     static fromJSON(data) {
-        const caisson = new Caisson(data.x, data.y);
+        const caisson = new window.Caisson(data.x, data.y);
         caisson.id = data.id;
         caisson.name = data.name || caisson.name;
         caisson.width = data.width || caisson.width;
@@ -231,6 +230,6 @@ export class Caisson extends Element {
      * Réinitialise le compteur d'IDs
      */
     static resetIdCounter() {
-        Caisson.nextId = 1;
+        window.Caisson.nextId = 1;
     }
-}
+};

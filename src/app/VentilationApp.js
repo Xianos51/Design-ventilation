@@ -2,16 +2,16 @@
  * Classe principale de l'application Design Ventilation
  */
 
-import { Caisson } from '../models/Caisson.js';
-import { Bouche } from '../models/Bouche.js';
-import { Conduit, STANDARD_DIAMETERS, STANDARD_RECT_SIZES } from '../models/Conduit.js';
-import { Point } from '../models/Point.js';
-import { calculateNetworkFlows, dimensionAllConduits, calculateRecommendedFlow } from '../calculations/flowCalculations.js';
-import { calculateNetworkPressureLoss, calculateTotalPressureDrop } from '../calculations/pressureCalculations.js';
-import { validateNetwork } from '../utils/networkValidation.js';
-import { generatePDF, downloadPDF } from '../utils/pdfExport.js';
+// Caisson from window
+// Bouche from window
+// Conduit, window.STANDARD_DIAMETERS, window.STANDARD_RECT_SIZES from window
+// Point from window
+// calculateNetworkFlows, dimensionAllConduits, calculateRecommendedFlow from window
+// calculateNetworkPressureLoss, calculateTotalPressureDrop from window
+// validateNetwork from window
+// generatePDF, downloadPDF from window
 
-export class VentilationApp {
+window.VentilationApp = class VentilationApp {
     constructor() {
         // Éléments du réseau
         this.elements = [];
@@ -244,7 +244,7 @@ export class VentilationApp {
                 this.conduitStartPoint = { x: point.x, y: point.y };
                 
                 // Créer un conduit temporaire
-                this.tempConduit = new Conduit(
+                this.tempConduit = new window.Conduit(
                     point.x, point.y, point.x, point.y,
                     this.currentTool === 'conduit-round'
                 );
@@ -279,11 +279,11 @@ export class VentilationApp {
             }
         } else if (this.drawingConduit) {
             // Mettre à jour le conduit temporaire
-            this.tempConduit.end.x = point.x;
-            this.tempConduit.end.y = point.y;
-            this.tempConduit.x = (this.tempConduit.start.x + this.tempConduit.end.x) / 2;
-            this.tempConduit.y = (this.tempConduit.start.y + this.tempConduit.end.y) / 2;
-            this.tempConduit.length = this.tempConduit.calculateLength();
+            this.tempwindow.Conduit.end.x = point.x;
+            this.tempwindow.Conduit.end.y = point.y;
+            this.tempwindow.Conduit.x = (this.tempwindow.Conduit.start.x + this.tempwindow.Conduit.end.x) / 2;
+            this.tempwindow.Conduit.y = (this.tempwindow.Conduit.start.y + this.tempwindow.Conduit.end.y) / 2;
+            this.tempwindow.Conduit.length = this.tempwindow.Conduit.calculateLength();
             
             this.draw();
         } else {
@@ -448,7 +448,7 @@ export class VentilationApp {
      * @param {number} y - Coordonnée Y
      */
     addCaisson(x, y) {
-        const caisson = new Caisson(x, y);
+        const caisson = new window.Caisson(x, y);
         this.elements.push(caisson);
         
         // Sauvegarder dans l'historique
@@ -472,7 +472,7 @@ export class VentilationApp {
      * @param {number} y - Coordonnée Y
      */
     addBouche(x, y) {
-        const bouche = new Bouche(x, y);
+        const bouche = new window.Bouche(x, y);
         this.elements.push(bouche);
         
         // Sauvegarder dans l'historique
@@ -513,9 +513,9 @@ export class VentilationApp {
         const startPoint = startElement.getClosestConnectionPoint(endElement.x, endElement.y);
         const endPoint = endElement.getClosestConnectionPoint(startElement.x, startElement.y);
         
-        const conduit = new Conduit(
-            startPoint.x, startPoint.y,
-            endPoint.x, endPoint.y,
+        const conduit = new window.Conduit(
+            startwindow.Point.x, startwindow.Point.y,
+            endwindow.Point.x, endwindow.Point.y,
             isRound
         );
         
@@ -740,7 +740,7 @@ export class VentilationApp {
             <div class="form-group">
                 <label class="form-label">Diamètre (mm)</label>
                 <select class="form-select" id="conduit-diameter">
-                    ${STANDARD_DIAMETERS.map(d => 
+                    ${window.STANDARD_DIAMETERS.map(d => 
                         `<option value="${d}" ${conduit.diameter === d ? 'selected' : ''}>${d}</option>`
                     ).join('')}
                 </select>
@@ -749,7 +749,7 @@ export class VentilationApp {
             <div class="form-group">
                 <label class="form-label">Largeur (mm)</label>
                 <select class="form-select" id="conduit-width">
-                    ${STANDARD_RECT_SIZES.map(s => 
+                    ${window.STANDARD_RECT_SIZES.map(s => 
                         `<option value="${s.width}" ${conduit.width === s.width ? 'selected' : ''}>${s.width}</option>`
                     ).join('')}
                 </select>
@@ -757,7 +757,7 @@ export class VentilationApp {
             <div class="form-group">
                 <label class="form-label">Hauteur (mm)</label>
                 <select class="form-select" id="conduit-height">
-                    ${STANDARD_RECT_SIZES.map(s => 
+                    ${window.STANDARD_RECT_SIZES.map(s => 
                         `<option value="${s.height}" ${conduit.height === s.height ? 'selected' : ''}>${s.height}</option>`
                     ).join('')}
                 </select>
@@ -1024,7 +1024,7 @@ export class VentilationApp {
      */
     calculateNetwork() {
         // Valider le réseau
-        const validation = validateNetwork(this.elements);
+        const validation = window.validateNetwork(this.elements);
         this.showValidation(validation);
         
         if (!validation.isValid) {
@@ -1033,7 +1033,7 @@ export class VentilationApp {
         }
         
         // Calculer les débits
-        const elementsWithFlows = calculateNetworkFlows(this.elements, this.flowDirection);
+        const elementsWithFlows = window.calculateNetworkFlows(this.elements, this.flowDirection);
         
         // Mettre à jour les éléments
         this.elements = elementsWithFlows;
@@ -1042,14 +1042,14 @@ export class VentilationApp {
         const bouches = this.elements.filter(el => el.type === 'bouche');
         const conduits = this.elements.filter(el => el.type === 'conduit');
         
-        const dimensionedConduits = dimensionAllConduits(conduits, bouches, this.flowDirection);
+        const dimensionedConduits = window.dimensionAllConduits(conduits, bouches, this.flowDirection);
         
         // Remplacer les conduits
         this.elements = this.elements.filter(el => el.type !== 'conduit');
         this.elements.push(...dimensionedConduits);
         
         // Calculer les pertes de charge
-        const pressureResults = calculateNetworkPressureLoss(this.elements);
+        const pressureResults = window.calculateNetworkPressureLoss(this.elements);
         
         // Mettre à jour les conduits avec les pertes de charge
         for (const conduit of this.elements) {
@@ -1080,14 +1080,14 @@ export class VentilationApp {
             let results = {};
             const bouches = this.elements.filter(el => el.type === 'bouche');
             if (bouches.length > 0) {
-                results = calculateNetworkPressureLoss(this.elements);
+                results = window.calculateNetworkPressureLoss(this.elements);
             }
             
             // Générer le PDF
-            const pdfBytes = await generatePDF(this.elements, results, this.flowDirection);
+            const pdfBytes = await window.generatePDF(this.elements, results, this.flowDirection);
             
             // Télécharger le PDF
-            downloadPDF(pdfBytes, `reseau_ventilation_${new Date().toISOString().slice(0, 10)}.pdf`);
+            window.downloadPDF(pdfBytes, `reseau_ventilation_${new Date().toISOString().slice(0, 10)}.pdf`);
             
             this.showNotification('Export PDF terminé', 'success');
         } catch (error) {
@@ -1121,9 +1121,9 @@ export class VentilationApp {
         this.selectedElements.clear();
         
         // Réinitialiser les compteurs d'IDs
-        Caisson.resetIdCounter();
-        Bouche.resetIdCounter();
-        Conduit.resetIdCounter();
+        window.Caisson.resetIdCounter();
+        window.Bouche.resetIdCounter();
+        window.Conduit.resetIdCounter();
         
         // Réinitialiser l'historique
         this.history = [];
@@ -1218,7 +1218,7 @@ export class VentilationApp {
         
         // Dessiner le conduit temporaire (si en cours de dessin)
         if (this.tempConduit) {
-            this.tempConduit.draw(this.ctx, this.scale, this.flowDirection);
+            this.tempwindow.Conduit.draw(this.ctx, this.scale, this.flowDirection);
         }
         
         // Dessiner les éléments sélectionnés en surbrillance
@@ -1330,24 +1330,24 @@ export class VentilationApp {
         this.clearAll();
         
         // Ajouter un caisson
-        const caisson = new Caisson(200, 200);
+        const caisson = new window.Caisson(200, 200);
         this.elements.push(caisson);
         
         // Ajouter des bouches
-        const bouche1 = new Bouche(400, 100);
+        const bouche1 = new window.Bouche(400, 100);
         bouche1.flowRate = 500;
         this.elements.push(bouche1);
         
-        const bouche2 = new Bouche(400, 300);
+        const bouche2 = new window.Bouche(400, 300);
         bouche2.flowRate = 300;
         this.elements.push(bouche2);
         
-        const bouche3 = new Bouche(600, 200);
+        const bouche3 = new window.Bouche(600, 200);
         bouche3.flowRate = 200;
         this.elements.push(bouche3);
         
         // Ajouter des conduits
-        const conduit1 = new Conduit(260, 200, 340, 150, true);
+        const conduit1 = new window.Conduit(260, 200, 340, 150, true);
         conduit1.startElementId = caisson.id;
         conduit1.endElementId = bouche1.id;
         caisson.addConnection(conduit1.id);
@@ -1356,7 +1356,7 @@ export class VentilationApp {
         conduit1.addConnection(bouche1.id);
         this.elements.push(conduit1);
         
-        const conduit2 = new Conduit(260, 200, 340, 250, true);
+        const conduit2 = new window.Conduit(260, 200, 340, 250, true);
         conduit2.startElementId = caisson.id;
         conduit2.endElementId = bouche2.id;
         caisson.addConnection(conduit2.id);
@@ -1365,7 +1365,7 @@ export class VentilationApp {
         conduit2.addConnection(bouche2.id);
         this.elements.push(conduit2);
         
-        const conduit3 = new Conduit(340, 200, 540, 200, true);
+        const conduit3 = new window.Conduit(340, 200, 540, 200, true);
         conduit3.startElementId = caisson.id;
         conduit3.endElementId = bouche3.id;
         caisson.addConnection(conduit3.id);
@@ -1377,4 +1377,4 @@ export class VentilationApp {
         this.draw();
         this.showNotification('Réseau de test chargé', 'success');
     }
-}
+};

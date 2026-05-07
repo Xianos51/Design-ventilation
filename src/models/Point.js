@@ -1,7 +1,7 @@
 /**
  * Classe représentant un point 2D
  */
-export class Point {
+window.Point = class Point {
     constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
@@ -38,7 +38,7 @@ export class Point {
     lerp(other, ratio) {
         const x = this.x + (other.x - this.x) * ratio;
         const y = this.y + (other.y - this.y) * ratio;
-        return new Point(x, y);
+        return new window.Point(x, y);
     }
 
     /**
@@ -57,7 +57,7 @@ export class Point {
      * @returns {Point} Une copie de ce point
      */
     clone() {
-        return new Point(this.x, this.y);
+        return new window.Point(this.x, this.y);
     }
 
     /**
@@ -74,6 +74,6 @@ export class Point {
      * @returns {Point} Le point créé
      */
     static fromJSON(obj) {
-        return new Point(obj.x, obj.y);
+        return new window.Point(obj.x, obj.y);
     }
-}
+};

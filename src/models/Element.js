@@ -1,12 +1,12 @@
 /**
  * Classe de base pour tous les éléments du réseau de ventilation
  */
-export class Element {
+window.Element = class Element {
     static nextId = 1;
     static prefix = 'E';
 
     constructor(x, y) {
-        this.id = `${Element.prefix}${Element.nextId++}`;
+        this.id = `${window.Element.prefix}${window.Element.nextId++}`;
         this.x = x;
         this.y = y;
         this.selected = false;
@@ -105,7 +105,7 @@ export class Element {
      * @returns {Element} L'élément créé
      */
     static fromJSON(data) {
-        const element = new this(data.x, data.y);
+        const element = new window.Element(data.x, data.y);
         element.id = data.id;
         element.connections = [...data.connections];
         return element;
@@ -115,7 +115,7 @@ export class Element {
      * Réinitialise le compteur d'IDs
      */
     static resetIdCounter() {
-        Element.nextId = 1;
+        window.Element.nextId = 1;
     }
 
     /**
@@ -123,6 +123,6 @@ export class Element {
      * @param {string} prefix - Nouveau préfixe
      */
     static setPrefix(prefix) {
-        Element.prefix = prefix;
+        window.Element.prefix = prefix;
     }
-}
+};

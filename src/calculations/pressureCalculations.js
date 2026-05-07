@@ -2,10 +2,10 @@
  * Module pour les calculs de perte de charge
  */
 
-import { AIR_DENSITY } from './flowCalculations.js';
+// Import from window
 
 // Coefficients de perte de charge singulière pour différents types de raccords
-const SINGULAR_LOSS_COEFFICIENTS = {
+window.window.SINGULAR_LOSS_COEFFICIENTS = {
     // Coude à 90°
     'elbow_90': {
         'round': 0.25,
@@ -122,7 +122,7 @@ export function calculateLinearPressureDrop(
     const frictionFactor = calculateFrictionFactor(reynoldsNumber, roughness, hydraulicDiameter);
 
     // Formule de Darcy-Weisbach: ΔP = f * (L / Dh) * (ρ * v² / 2)
-    const pressureDrop = frictionFactor * (length / hydraulicDiameter) * (AIR_DENSITY * velocity * velocity / 2);
+    const pressureDrop = frictionFactor * (length / hydraulicDiameter) * (window.AIR_DENSITY * velocity * velocity / 2);
 
     return pressureDrop;
 }
@@ -160,10 +160,10 @@ function calculateFrictionFactor(reynoldsNumber, roughness, diameter) {
 export function calculateSingularPressureDrop(velocity, fittingType = 'elbow_90', isRound = true) {
     if (velocity <= 0) return 0;
 
-    const coefficient = SINGULAR_LOSS_COEFFICIENTS[fittingType]?.[isRound ? 'round' : 'rect'] || 0.25;
+    const coefficient = window.SINGULAR_LOSS_COEFFICIENTS[fittingType]?.[isRound ? 'round' : 'rect'] || 0.25;
     
     // Formule: ΔP = K * (ρ * v² / 2)
-    return coefficient * (AIR_DENSITY * velocity * velocity / 2);
+    return coefficient * (window.AIR_DENSITY * velocity * velocity / 2);
 }
 
 /**
@@ -185,7 +185,7 @@ export function calculateReductionPressureDrop(velocityIn, areaIn, areaOut, isRo
     const coefficient = 0.5 * Math.pow(1 - areaRatio, 2);
 
     // Formule: ΔP = K * (ρ * v² / 2)
-    return coefficient * (AIR_DENSITY * velocityIn * velocityIn / 2);
+    return coefficient * (window.AIR_DENSITY * velocityIn * velocityIn / 2);
 }
 
 /**
@@ -207,7 +207,7 @@ export function calculateExpansionPressureDrop(velocityIn, areaIn, areaOut, isRo
     const coefficient = Math.pow(1 - areaIn / areaOut, 2);
 
     // Formule: ΔP = K * (ρ * v² / 2)
-    return coefficient * (AIR_DENSITY * velocityIn * velocityIn / 2);
+    return coefficient * (window.AIR_DENSITY * velocityIn * velocityIn / 2);
 }
 
 /**
@@ -216,7 +216,7 @@ export function calculateExpansionPressureDrop(velocityIn, areaIn, areaOut, isRo
  * @param {Array} elements - Tous les éléments du réseau
  * @returns {number} Perte de charge totale en Pa
  */
-export function calculateTotalPressureDrop(conduit, elements) {
+window.calculateTotalPressureDrop = function(conduit, elements) {
     if (!conduit || conduit.flowRate <= 0) return 0;
 
     let totalPressureDrop = 0;
@@ -354,7 +354,7 @@ export function sizeCaisson(totalFlow, type = 'centrifuge') {
  * @param {Array} elements - Tous les éléments du réseau
  * @returns {Object} Objet avec les résultats de calcul
  */
-export function calculateNetworkPressureLoss(elements) {
+window.calculateNetworkPressureLoss = function(elements) {
     const conduits = elements.filter(el => el.type === 'conduit');
     const bouches = elements.filter(el => el.type === 'bouche');
     const caissons = elements.filter(el => el.type === 'caisson');

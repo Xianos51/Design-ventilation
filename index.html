@@ -26,7 +26,7 @@
 
 
 
-    <link rel="stylesheet" href="/src/styles.css">
+    <link rel="stylesheet" href="src/styles.css">
 </head>
 
 
@@ -679,7 +679,23 @@
 
 
 
-    <script type="module" src="/src/index.js"></script>
+    
+    <!-- Charger les dépendances -->
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+    
+    <!-- Charger les classes dans le bon ordre -->
+    <script src="src/models/Point.js"></script>
+    <script src="src/models/Element.js"></script>
+    <script src="src/models/Caisson.js"></script>
+    <script src="src/models/Bouche.js"></script>
+    <script src="src/models/Conduit.js"></script>
+    <script src="src/calculations/flowCalculations.js"></script>
+    <script src="src/calculations/pressureCalculations.js"></script>
+    <script src="src/utils/networkValidation.js"></script>
+    <script src="src/utils/pdfExport.js"></script>
+    <script src="src/app/VentilationApp.js"></script>
+    <script src="src/index.js"></script>
+
 
 
 

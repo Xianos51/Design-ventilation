@@ -1,16 +1,15 @@
 /**
  * Classe représentant une bouche de ventilation
  */
-import { Element } from './Element.js';
 
-export class Bouche extends Element {
+window.Bouche = class Bouche extends window.Element {
     static nextId = 1;
     static prefix = 'B';
 
     constructor(x, y) {
         super(x, y);
-        this.id = `${Bouche.prefix}${Bouche.nextId++}`;
-        this.name = `Bouche ${Bouche.nextId - 1}`;
+        this.id = `${window.Bouche.prefix}${window.Bouche.nextId++}`;
+        this.name = `Bouche ${window.Bouche.nextId - 1}`;
         this.width = 30;
         this.height = 30;
         this.flowRate = 0; // m³/h - débit de la bouche
@@ -262,7 +261,7 @@ export class Bouche extends Element {
      * @returns {Bouche} La bouche créée
      */
     static fromJSON(data) {
-        const bouche = new Bouche(data.x, data.y);
+        const bouche = new window.Bouche(data.x, data.y);
         bouche.id = data.id;
         bouche.name = data.name || bouche.name;
         bouche.width = data.width || bouche.width;
@@ -279,6 +278,6 @@ export class Bouche extends Element {
      * Réinitialise le compteur d'IDs
      */
     static resetIdCounter() {
-        Bouche.nextId = 1;
+        window.Bouche.nextId = 1;
     }
-}
+};

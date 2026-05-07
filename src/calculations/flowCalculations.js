@@ -2,17 +2,17 @@
  * Module pour les calculs de débit et dimensionnement
  */
 
-import { STANDARD_DIAMETERS, STANDARD_RECT_SIZES } from '../models/Conduit.js';
+// Import from window
 
 // Constantes pour les calculs
-const AIR_DENSITY = 1.2; // kg/m³ - densité de l'air à 20°C
-const MAX_VELOCITY_SUPPLY = 8; // m/s - vitesse maximale recommandée pour le soufflage
-const MAX_VELOCITY_EXTRACT = 10; // m/s - vitesse maximale recommandée pour l'aspiration
-const MAX_VELOCITY_MAIN = 12; // m/s - vitesse maximale recommandée pour les conduits principaux
-const MIN_VELOCITY = 2; // m/s - vitesse minimale recommandée
+window.AIR_DENSITY = 1.2; // kg/m³ - densité de l'air à 20°C
+window.MAX_VELOCITY_SUPPLY = 8; // m/s - vitesse maximale recommandée pour le soufflage
+window.MAX_VELOCITY_EXTRACT = 10; // m/s - vitesse maximale recommandée pour l'aspiration
+window.MAX_VELOCITY_MAIN = 12; // m/s - vitesse maximale recommandée pour les conduits principaux
+window.MIN_VELOCITY = 2; // m/s - vitesse minimale recommandée
 
 // Normes de débit par type de local (m³/h par m²)
-const FLOW_RATES_PER_AREA = {
+window.FLOW_RATES_PER_AREA = {
     'bureau': 30,
     'salle_de_reunion': 40,
     'salle_de_classe': 35,
@@ -116,7 +116,7 @@ function findElementById(id, bouches, conduits, caissons = []) {
  * @returns {number} Diamètre en mm
  */
 export function sizeRoundConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN) {
-    if (flowRate <= 0) return STANDARD_DIAMETERS[0];
+    if (flowRate <= 0) return window.STANDARD_DIAMETERS[0];
 
     // Convertir le débit de m³/h à m³/s
     const flowRateM3s = flowRate / 3600;
@@ -140,7 +140,7 @@ export function sizeRoundConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN) {
  * @returns {Object} Objet avec width et height en mm
  */
 export function sizeRectConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN, aspectRatio = 2) {
-    if (flowRate <= 0) return STANDARD_RECT_SIZES[0];
+    if (flowRate <= 0) return window.STANDARD_RECT_SIZES[0];
 
     // Convertir le débit de m³/h à m³/s
     const flowRateM3s = flowRate / 3600;
@@ -165,12 +165,12 @@ export function sizeRectConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN, aspec
  * @returns {number} Diamètre standard
  */
 function findClosestStandardDiameter(diameter) {
-    for (const stdDiameter of STANDARD_DIAMETERS) {
+    for (const stdDiameter of window.STANDARD_DIAMETERS) {
         if (stdDiameter >= diameter) {
             return stdDiameter;
         }
     }
-    return STANDARD_DIAMETERS[STANDARD_DIAMETERS.length - 1];
+    return window.STANDARD_DIAMETERS[window.STANDARD_DIAMETERS.length - 1];
 }
 
 /**
@@ -180,10 +180,10 @@ function findClosestStandardDiameter(diameter) {
  * @returns {Object} Taille standard avec width et height
  */
 function findClosestStandardRectSize(width, height) {
-    let bestFit = STANDARD_RECT_SIZES[0];
+    let bestFit = window.STANDARD_RECT_SIZES[0];
     let minDiff = Infinity;
 
-    for (const size of STANDARD_RECT_SIZES) {
+    for (const size of window.STANDARD_RECT_SIZES) {
         const area = size.width * size.height;
         const targetArea = width * height;
         const diff = Math.abs(area - targetArea);
@@ -271,7 +271,7 @@ export function checkVelocityLimits(velocity, elementType = 'main') {
  * @param {string} roomType - Type de local
  * @returns {number} Débit recommandé en m³/h
  */
-export function calculateRecommendedFlow(area, roomType = 'bureau') {
+window.calculateRecommendedFlow = function(area, roomType = 'bureau') {
     const rate = FLOW_RATES_PER_AREA[roomType] || FLOW_RATES_PER_AREA['bureau'];
     return area * rate;
 }
@@ -283,7 +283,7 @@ export function calculateRecommendedFlow(area, roomType = 'bureau') {
  * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
  * @returns {Array} Tableau des conduits dimensionnés
  */
-export function dimensionAllConduits(conduits, bouches, flowDirection = 'supply') {
+window.dimensionAllConduits = function(conduits, bouches, flowDirection = 'supply') {
     // Créer une carte des bouches par ID
     const bouchesMap = new Map(bouches.map(b => [b.id, b]));
 
@@ -327,7 +327,7 @@ export function dimensionAllConduits(conduits, bouches, flowDirection = 'supply'
  * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
  * @returns {Array} Tableau des éléments avec les débits mis à jour
  */
-export function calculateNetworkFlows(elements, flowDirection = 'supply') {
+window.calculateNetworkFlows = function(elements, flowDirection = 'supply') {
     // Séparer les éléments par type
     const caissons = elements.filter(el => el.type === 'caisson');
     const bouches = elements.filter(el => el.type === 'bouche');

@@ -7,12 +7,12 @@
  * @param {Array} elements - Tous les éléments du réseau
  * @returns {Object} Objet avec hasLoop (boolean) et loops (Array)
  */
-export function detectLoops(elements) {
+window.detectLoops = function(elements) {
     const conduits = elements.filter(el => el.type === 'conduit');
     const nodes = elements.filter(el => el.type === 'caisson' || el.type === 'bouche');
 
     // Créer un graphe de connexion
-    const graph = buildConnectionGraph(elements);
+    const graph = window.buildConnectionGraph(elements);
 
     // Détecter les boucles avec un algorithme de parcours en profondeur
     const visited = new Set();
@@ -59,7 +59,7 @@ export function detectLoops(elements) {
  * @param {Array} elements - Tous les éléments
  * @returns {Map} Graphe de connexion (nodeId -> Set of connected nodeIds)
  */
-function buildConnectionGraph(elements) {
+function window.buildConnectionGraph(elements) {
     const graph = new Map();
 
     // Initialiser tous les nœuds
@@ -103,7 +103,7 @@ export function checkBouchesConnected(elements) {
     }
 
     // Construire le graphe de connexion
-    const graph = buildConnectionGraph(elements);
+    const graph = window.buildConnectionGraph(elements);
 
     // Trouver toutes les bouches connectées au caisson
     const connectedBouches = new Set();
@@ -362,7 +362,7 @@ export function checkNodeLimit(elements, maxNodes = 100) {
  * @param {Array} elements - Tous les éléments du réseau
  * @returns {Object} Résultats de la validation
  */
-export function validateNetwork(elements) {
+window.validateNetwork = function(elements) {
     const results = {
         isValid: true,
         errors: [],
@@ -411,7 +411,7 @@ export function validateNetwork(elements) {
     }
 
     // 5. Détecter les boucles
-    const loopDetection = detectLoops(elements);
+    const loopDetection = window.detectLoops(elements);
     if (loopDetection.hasLoop) {
         results.warnings.push(`Boucle(s) détectée(s) dans le réseau : ${loopDetection.loops.length}`);
     } else {

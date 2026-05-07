@@ -1,11 +1,11 @@
 // Point d'entrée de l'application
 // Ce fichier est utilisé par Vite pour le build
 
-import { VentilationApp } from './app/VentilationApp.js';
+// VentilationApp from window
 
 // Initialiser l'application quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', () => {
-    const app = new VentilationApp();
+    const app = new window.VentilationApp();
     app.init();
     
     // Exposer l'application au niveau global pour le débogage

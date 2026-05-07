@@ -2,7 +2,7 @@
  * Module pour l'export PDF du réseau de ventilation
  */
 
-import { PDFDocument, rgb } from 'pdf-lib';
+// PDFDocument, rgb from window (loaded via CDN)
 
 /**
  * Génère un document PDF avec le réseau de ventilation
@@ -11,9 +11,9 @@ import { PDFDocument, rgb } from 'pdf-lib';
  * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
  * @returns {Promise<Uint8Array>} PDF généré
  */
-export async function generatePDF(elements, results = {}, flowDirection = 'supply') {
+window.generatePDF = async function(elements, results = {}, flowDirection = 'supply') {
     // Créer un nouveau document PDF
-    const pdfDoc = await PDFDocument.create();
+    const pdfDoc = await window.PDFDocument.create();
     
     // Ajouter une page
     const page = pdfDoc.addPage([800, 1100]);
@@ -41,11 +41,11 @@ async function drawPDFContent(page, elements, results, flowDirection) {
     const contentHeight = height - 2 * margin;
 
     // Couleurs
-    const black = rgb(0, 0, 0);
-    const blue = rgb(0, 0, 1);
-    const red = rgb(1, 0, 0);
-    const green = rgb(0, 0.5, 0);
-    const gray = rgb(0.5, 0.5, 0.5);
+    const black = window.rgb(0, 0, 0);
+    const blue = window.rgb(0, 0, 1);
+    const red = window.rgb(1, 0, 0);
+    const green = window.rgb(0, 0.5, 0);
+    const gray = window.rgb(0.5, 0.5, 0.5);
 
     // Titre
     page.drawText('Rapport de Ventilation', {
@@ -142,7 +142,7 @@ async function drawNetworkDiagram(page, elements, x, y, width, flowDirection) {
         x: centerX,
         y: y,
         size: 16,
-        color: rgb(0, 0, 0),
+        color: window.rgb(0, 0, 0),
         textAlign: 'center'
     });
 
@@ -165,28 +165,28 @@ async function drawNetworkDiagram(page, elements, x, y, width, flowDirection) {
         x: x,
         y: legendY,
         size: 12,
-        color: rgb(0, 0, 0)
+        color: window.rgb(0, 0, 0)
     });
 
     page.drawText('C - Caisson', {
         x: x + 50,
         y: legendY,
         size: 10,
-        color: rgb(0, 0, 1)
+        color: window.rgb(0, 0, 1)
     });
 
     page.drawText('B - Bouche', {
         x: x + 150,
         y: legendY,
         size: 10,
-        color: rgb(0, 0.5, 0)
+        color: window.rgb(0, 0.5, 0)
     });
 
     page.drawText('S - Conduit', {
         x: x + 250,
         y: legendY,
         size: 10,
-        color: rgb(0, 0, 0)
+        color: window.rgb(0, 0, 0)
     });
 
     return legendY - 30;
@@ -244,9 +244,9 @@ function drawCaisson(page, caisson, centerX, centerY, scale, flowDirection) {
         y: y - size / 2,
         width: size,
         height: size,
-        borderColor: rgb(0, 0, 1),
+        borderColor: window.rgb(0, 0, 1),
         borderWidth: 1,
-        color: rgb(0.8, 0.8, 1)
+        color: window.rgb(0.8, 0.8, 1)
     });
 
     // Texte
@@ -254,7 +254,7 @@ function drawCaisson(page, caisson, centerX, centerY, scale, flowDirection) {
         x: x,
         y: y - size / 2 - 5,
         size: 8,
-        color: rgb(0, 0, 0),
+        color: window.rgb(0, 0, 0),
         textAlign: 'center'
     });
 
@@ -264,7 +264,7 @@ function drawCaisson(page, caisson, centerX, centerY, scale, flowDirection) {
             x: x,
             y: y + size / 2 + 10,
             size: 7,
-            color: rgb(0, 0, 0),
+            color: window.rgb(0, 0, 0),
             textAlign: 'center'
         });
     }
@@ -291,9 +291,9 @@ function drawBouche(page, bouche, centerX, centerY, scale, flowDirection) {
             x: x,
             y: y,
             size: size,
-            borderColor: rgb(0, 0.5, 0),
+            borderColor: window.rgb(0, 0.5, 0),
             borderWidth: 1,
-            color: rgb(0.8, 1, 0.8)
+            color: window.rgb(0.8, 1, 0.8)
         });
     } else {
         page.drawRectangle({
@@ -301,9 +301,9 @@ function drawBouche(page, bouche, centerX, centerY, scale, flowDirection) {
             y: y - size / 2,
             width: size,
             height: size,
-            borderColor: rgb(0, 0.5, 0),
+            borderColor: window.rgb(0, 0.5, 0),
             borderWidth: 1,
-            color: rgb(0.8, 1, 0.8)
+            color: window.rgb(0.8, 1, 0.8)
         });
     }
 
@@ -312,7 +312,7 @@ function drawBouche(page, bouche, centerX, centerY, scale, flowDirection) {
         x: x,
         y: y - size / 2 - 5,
         size: 8,
-        color: rgb(0, 0, 0),
+        color: window.rgb(0, 0, 0),
         textAlign: 'center'
     });
 
@@ -322,7 +322,7 @@ function drawBouche(page, bouche, centerX, centerY, scale, flowDirection) {
             x: x,
             y: y + size / 2 + 10,
             size: 7,
-            color: rgb(0, 0, 0),
+            color: window.rgb(0, 0, 0),
             textAlign: 'center'
         });
     }
@@ -345,7 +345,7 @@ function drawConduit(page, conduit, centerX, centerY, scale, flowDirection) {
     const endY = centerY - (conduit.end.y - bounds.minY - 20) * scale;
 
     // Couleur en fonction du sens de l'air
-    const color = flowDirection === 'supply' ? rgb(0, 0, 1) : rgb(1, 0, 0);
+    const color = flowDirection === 'supply' ? window.rgb(0, 0, 1) : window.rgb(1, 0, 0);
 
     // Dessiner la ligne
     page.drawLine({
@@ -363,7 +363,7 @@ function drawConduit(page, conduit, centerX, centerY, scale, flowDirection) {
         x: midX,
         y: midY - 5,
         size: 8,
-        color: rgb(0, 0, 0),
+        color: window.rgb(0, 0, 0),
         textAlign: 'center'
     });
 
@@ -377,7 +377,7 @@ function drawConduit(page, conduit, centerX, centerY, scale, flowDirection) {
             x: midX,
             y: midY + 10,
             size: 7,
-            color: rgb(0, 0, 0),
+            color: window.rgb(0, 0, 0),
             textAlign: 'center'
         });
     }
@@ -397,7 +397,7 @@ async function drawElementsTable(page, elements, x, y, width) {
         x: x,
         y: y,
         size: 16,
-        color: rgb(0, 0, 0)
+        color: window.rgb(0, 0, 0)
     });
 
     y -= 25;
@@ -413,7 +413,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + colWidths[i] / 2,
             y: y,
             size: 10,
-            color: rgb(1, 1, 1),
+            color: window.rgb(1, 1, 1),
             textAlign: 'center'
         });
         
@@ -423,7 +423,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             y: y - 5,
             width: colWidths[i],
             height: 15,
-            color: rgb(0.7, 0.7, 0.7)
+            color: window.rgb(0.7, 0.7, 0.7)
         });
         
         currentX += colWidths[i];
@@ -444,7 +444,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[0];
 
@@ -452,7 +452,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[1];
 
@@ -460,7 +460,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[2];
 
@@ -468,7 +468,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[3];
 
@@ -476,7 +476,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
 
         y -= 15;
@@ -490,7 +490,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[0];
 
@@ -498,7 +498,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[1];
 
@@ -506,7 +506,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[2];
 
@@ -514,7 +514,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[3];
 
@@ -522,7 +522,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
 
         y -= 15;
@@ -536,7 +536,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[0];
 
@@ -544,7 +544,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[1];
 
@@ -552,7 +552,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[2];
 
@@ -563,7 +563,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         currentX += colWidths[3];
 
@@ -571,7 +571,7 @@ async function drawElementsTable(page, elements, x, y, width) {
             x: currentX + 10,
             y: y,
             size: 9,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
 
         y -= 15;
@@ -594,7 +594,7 @@ async function drawCalculationResults(page, results, x, y, width) {
         x: x,
         y: y,
         size: 16,
-        color: rgb(0, 0, 0)
+        color: window.rgb(0, 0, 0)
     });
 
     y -= 25;
@@ -605,7 +605,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 20;
     }
@@ -616,7 +616,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 20;
     }
@@ -627,7 +627,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 20;
 
@@ -635,7 +635,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x + 20,
             y: y,
             size: 10,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 15;
 
@@ -643,7 +643,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x + 20,
             y: y,
             size: 10,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 15;
 
@@ -651,7 +651,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x + 20,
             y: y,
             size: 10,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 15;
 
@@ -659,7 +659,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x + 20,
             y: y,
             size: 10,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 20;
     }
@@ -670,7 +670,7 @@ async function drawCalculationResults(page, results, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(0, 0, 0)
+            color: window.rgb(0, 0, 0)
         });
         y -= 20;
 
@@ -679,7 +679,7 @@ async function drawCalculationResults(page, results, x, y, width) {
                 x: x + 20,
                 y: y,
                 size: 10,
-                color: rgb(0, 0, 0)
+                color: window.rgb(0, 0, 0)
             });
             y -= 15;
         }
@@ -702,7 +702,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
         x: x,
         y: y,
         size: 16,
-        color: rgb(0, 0, 0)
+        color: window.rgb(0, 0, 0)
     });
 
     y -= 25;
@@ -716,7 +716,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
         x: x,
         y: y,
         size: 12,
-        color: validation.isValid ? rgb(0, 0.5, 0) : rgb(1, 0, 0)
+        color: validation.isValid ? window.rgb(0, 0.5, 0) : window.rgb(1, 0, 0)
     });
     y -= 20;
 
@@ -726,7 +726,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(1, 0, 0)
+            color: window.rgb(1, 0, 0)
         });
         y -= 20;
 
@@ -735,7 +735,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
                 x: x + 20,
                 y: y,
                 size: 10,
-                color: rgb(0, 0, 0)
+                color: window.rgb(0, 0, 0)
             });
             y -= 15;
         }
@@ -747,7 +747,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(1, 0.5, 0)
+            color: window.rgb(1, 0.5, 0)
         });
         y -= 20;
 
@@ -756,7 +756,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
                 x: x + 20,
                 y: y,
                 size: 10,
-                color: rgb(0, 0, 0)
+                color: window.rgb(0, 0, 0)
             });
             y -= 15;
         }
@@ -768,7 +768,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
             x: x,
             y: y,
             size: 12,
-            color: rgb(0, 0, 1)
+            color: window.rgb(0, 0, 1)
         });
         y -= 20;
 
@@ -777,7 +777,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
                 x: x + 20,
                 y: y,
                 size: 10,
-                color: rgb(0, 0, 0)
+                color: window.rgb(0, 0, 0)
             });
             y -= 15;
         }

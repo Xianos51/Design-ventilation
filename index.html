@@ -1,173 +1,693 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Design Ventilation - Calcul de réseaux de ventilation</title>
-
-</head>
-<body>
-    <div id="app">
-        <!-- Barre d'outils -->
-        <div class="toolbar">
-            <div class="toolbar-section">
-                <h2>Design Ventilation</h2>
-            </div>
-            
-            <div class="toolbar-section">
-                <button id="tool-select" class="tool-btn active" title="Sélectionner">
-                    <span class="icon">👆</span>
-                    <span class="label">Sélection</span>
-                </button>
-                <button id="tool-caisson" class="tool-btn" title="Ajouter un caisson">
-                    <span class="icon">📦</span>
-                    <span class="label">Caisson</span>
-                </button>
-                <button id="tool-bouche" class="tool-btn" title="Ajouter une bouche">
-                    <span class="icon">🔳</span>
-                    <span class="label">Bouche</span>
-                </button>
-                <button id="tool-conduit-round" class="tool-btn" title="Conduit rond">
-                    <span class="icon">⭕</span>
-                    <span class="label">Conduit ⭕</span>
-                </button>
-                <button id="tool-conduit-rect" class="tool-btn" title="Conduit rectangulaire">
-                    <span class="icon">⬜</span>
-                    <span class="label">Conduit ⬜</span>
-                </button>
-            </div>
-
-            <div class="toolbar-section">
-                <select id="flow-direction" class="flow-select">
-                    <option value="supply">Soufflage</option>
-                    <option value="extract">Aspiration</option>
-                </select>
-                <button id="calculate-btn" class="action-btn" title="Calculer le réseau">
-                    <span class="icon">🔢</span>
-                    <span class="label">Calculer</span>
-                </button>
-                <button id="clear-btn" class="action-btn" title="Effacer tout">
-                    <span class="icon">🗑️</span>
-                    <span class="label">Effacer</span>
-                </button>
-                <button id="export-pdf-btn" class="action-btn" title="Exporter en PDF">
-                    <span class="icon">📄</span>
-                    <span class="label">PDF</span>
-                </button>
-            </div>
-
-            <div class="toolbar-section">
-                <button id="help-btn" class="help-btn" title="Aide">
-                    <span class="icon">❓</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Zone de dessin -->
-        <div class="drawing-area">
-            <canvas id="canvas"></canvas>
-            <div id="canvas-overlay" class="canvas-overlay"></div>
-        </div>
-
-        <!-- Panneau de propriétés -->
-        <div class="properties-panel">
-            <div class="panel-header">
-                <h3>Propriétés</h3>
-                <button id="close-properties" class="close-btn">×</button>
-            </div>
-            <div class="panel-content" id="properties-content">
-                <p class="empty-message">Sélectionnez un élément pour voir ses propriétés.</p>
-            </div>
-        </div>
-
-        <!-- Panneau des résultats -->
-        <div class="results-panel">
-            <div class="panel-header">
-                <h3>Résultats</h3>
-                <button id="close-results" class="close-btn">×</button>
-            </div>
-            <div class="panel-content" id="results-content">
-                <p class="empty-message">Calculez le réseau pour voir les résultats.</p>
-            </div>
-        </div>
-
-        <!-- Panneau de validation -->
-        <div class="validation-panel">
-            <div class="panel-header">
-                <h3>Validation</h3>
-                <button id="close-validation" class="close-btn">×</button>
-            </div>
-            <div class="panel-content" id="validation-content">
-                <p class="empty-message">Aucune erreur détectée.</p>
-            </div>
-        </div>
-
-        <!-- Modale d'aide -->
-        <div id="help-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Aide - Design Ventilation</h2>
-                    <button id="close-help" class="close-btn">×</button>
-                </div>
-                <div class="modal-body">
-                    <div class="help-section">
-                        <h3>📋 Introduction</h3>
-                        <p>Cette application permet de concevoir et calculer des réseaux de ventilation en 2D.</p>
-                    </div>
-                    <div class="help-section">
-                        <h3>🎨 Outils de dessin</h3>
-                        <ul>
-                            <li><strong>Sélection</strong> : Sélectionnez et déplacez les éléments existants.</li>
-                            <li><strong>Caisson</strong> : Ajoutez un caisson de ventilation (point de départ).</li>
-                            <li><strong>Bouche</strong> : Ajoutez une bouche de ventilation (point de sortie).</li>
-                            <li><strong>Conduit ⭕</strong> : Dessinez un conduit rond entre deux éléments.</li>
-                            <li><strong>Conduit ⬜</strong> : Dessinez un conduit rectangulaire entre deux éléments.</li>
-                        </ul>
-                    </div>
-                    <div class="help-section">
-                        <h3>🔢 Calculs</h3>
-                        <p>1. Placez un caisson (point de départ)</p>
-                        <p>2. Ajoutez des bouches et connectez-les avec des conduits</p>
-                        <p>3. Définissez le débit pour chaque bouche dans le panneau de propriétés</p>
-                        <p>4. Sélectionnez le sens de l'air (Soufflage ou Aspiration)</p>
-                        <p>5. Cliquez sur "Calculer" pour dimensionner automatiquement le réseau</p>
-                    </div>
-                    <div class="help-section">
-                        <h3>📄 Export PDF</h3>
-                        <p>Exportez votre réseau avec toutes les informations : schéma, débits, dimensions, pertes de charge.</p>
-                    </div>
-                    <div class="help-section">
-                        <h3>📊 Normes utilisées</h3>
-                        <p>L'application utilise les normes NF EN 13779 (Europe) et ASHRAE (États-Unis) pour les calculs.</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="close-help-footer" class="btn">Fermer</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modale de confirmation -->
-        <div id="confirm-modal" class="modal">
-            <div class="modal-content small">
-                <div class="modal-header">
-                    <h3 id="confirm-title">Confirmation</h3>
-                    <button id="close-confirm" class="close-btn">×</button>
-                </div>
-                <div class="modal-body">
-                    <p id="confirm-message">Êtes-vous sûr de vouloir effacer tout le réseau ?</p>
-                </div>
-                <div class="modal-footer">
-                    <button id="confirm-no" class="btn secondary">Non</button>
-                    <button id="confirm-yes" class="btn primary">Oui</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notifications -->
-        <div id="notifications" class="notifications"></div>
-    </div>
-
-    <script type="module" src="./src/index.js"></script>
-</body>
-</html>
+<!DOCTYPE html>
+
+
+
+<html lang="fr">
+
+
+
+<head>
+
+
+
+    <meta charset="UTF-8">
+
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+    <title>Design Ventilation - Calcul de réseaux de ventilation</title>
+
+
+
+
+
+
+
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+
+
+
+<body>
+
+
+
+    <div id="app">
+
+
+
+        <!-- Barre d'outils -->
+
+
+
+        <div class="toolbar">
+
+
+
+            <div class="toolbar-section">
+
+
+
+                <h2>Design Ventilation</h2>
+
+
+
+            </div>
+
+
+
+            
+
+
+
+            <div class="toolbar-section">
+
+
+
+                <button id="tool-select" class="tool-btn active" title="Sélectionner">
+
+
+
+                    <span class="icon">👆</span>
+
+
+
+                    <span class="label">Sélection</span>
+
+
+
+                </button>
+
+
+
+                <button id="tool-caisson" class="tool-btn" title="Ajouter un caisson">
+
+
+
+                    <span class="icon">📦</span>
+
+
+
+                    <span class="label">Caisson</span>
+
+
+
+                </button>
+
+
+
+                <button id="tool-bouche" class="tool-btn" title="Ajouter une bouche">
+
+
+
+                    <span class="icon">🔳</span>
+
+
+
+                    <span class="label">Bouche</span>
+
+
+
+                </button>
+
+
+
+                <button id="tool-conduit-round" class="tool-btn" title="Conduit rond">
+
+
+
+                    <span class="icon">⭕</span>
+
+
+
+                    <span class="label">Conduit ⭕</span>
+
+
+
+                </button>
+
+
+
+                <button id="tool-conduit-rect" class="tool-btn" title="Conduit rectangulaire">
+
+
+
+                    <span class="icon">⬜</span>
+
+
+
+                    <span class="label">Conduit ⬜</span>
+
+
+
+                </button>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="toolbar-section">
+
+
+
+                <select id="flow-direction" class="flow-select">
+
+
+
+                    <option value="supply">Soufflage</option>
+
+
+
+                    <option value="extract">Aspiration</option>
+
+
+
+                </select>
+
+
+
+                <button id="calculate-btn" class="action-btn" title="Calculer le réseau">
+
+
+
+                    <span class="icon">🔢</span>
+
+
+
+                    <span class="label">Calculer</span>
+
+
+
+                </button>
+
+
+
+                <button id="clear-btn" class="action-btn" title="Effacer tout">
+
+
+
+                    <span class="icon">🗑️</span>
+
+
+
+                    <span class="label">Effacer</span>
+
+
+
+                </button>
+
+
+
+                <button id="export-pdf-btn" class="action-btn" title="Exporter en PDF">
+
+
+
+                    <span class="icon">📄</span>
+
+
+
+                    <span class="label">PDF</span>
+
+
+
+                </button>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <div class="toolbar-section">
+
+
+
+                <button id="help-btn" class="help-btn" title="Aide">
+
+
+
+                    <span class="icon">❓</span>
+
+
+
+                </button>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Zone de dessin -->
+
+
+
+        <div class="drawing-area">
+
+
+
+            <canvas id="canvas"></canvas>
+
+
+
+            <div id="canvas-overlay" class="canvas-overlay"></div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Panneau de propriétés -->
+
+
+
+        <div class="properties-panel">
+
+
+
+            <div class="panel-header">
+
+
+
+                <h3>Propriétés</h3>
+
+
+
+                <button id="close-properties" class="close-btn">×</button>
+
+
+
+            </div>
+
+
+
+            <div class="panel-content" id="properties-content">
+
+
+
+                <p class="empty-message">Sélectionnez un élément pour voir ses propriétés.</p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Panneau des résultats -->
+
+
+
+        <div class="results-panel">
+
+
+
+            <div class="panel-header">
+
+
+
+                <h3>Résultats</h3>
+
+
+
+                <button id="close-results" class="close-btn">×</button>
+
+
+
+            </div>
+
+
+
+            <div class="panel-content" id="results-content">
+
+
+
+                <p class="empty-message">Calculez le réseau pour voir les résultats.</p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Panneau de validation -->
+
+
+
+        <div class="validation-panel">
+
+
+
+            <div class="panel-header">
+
+
+
+                <h3>Validation</h3>
+
+
+
+                <button id="close-validation" class="close-btn">×</button>
+
+
+
+            </div>
+
+
+
+            <div class="panel-content" id="validation-content">
+
+
+
+                <p class="empty-message">Aucune erreur détectée.</p>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Modale d'aide -->
+
+
+
+        <div id="help-modal" class="modal">
+
+
+
+            <div class="modal-content">
+
+
+
+                <div class="modal-header">
+
+
+
+                    <h2>Aide - Design Ventilation</h2>
+
+
+
+                    <button id="close-help" class="close-btn">×</button>
+
+
+
+                </div>
+
+
+
+                <div class="modal-body">
+
+
+
+                    <div class="help-section">
+
+
+
+                        <h3>📋 Introduction</h3>
+
+
+
+                        <p>Cette application permet de concevoir et calculer des réseaux de ventilation en 2D.</p>
+
+
+
+                    </div>
+
+
+
+                    <div class="help-section">
+
+
+
+                        <h3>🎨 Outils de dessin</h3>
+
+
+
+                        <ul>
+
+
+
+                            <li><strong>Sélection</strong> : Sélectionnez et déplacez les éléments existants.</li>
+
+
+
+                            <li><strong>Caisson</strong> : Ajoutez un caisson de ventilation (point de départ).</li>
+
+
+
+                            <li><strong>Bouche</strong> : Ajoutez une bouche de ventilation (point de sortie).</li>
+
+
+
+                            <li><strong>Conduit ⭕</strong> : Dessinez un conduit rond entre deux éléments.</li>
+
+
+
+                            <li><strong>Conduit ⬜</strong> : Dessinez un conduit rectangulaire entre deux éléments.</li>
+
+
+
+                        </ul>
+
+
+
+                    </div>
+
+
+
+                    <div class="help-section">
+
+
+
+                        <h3>🔢 Calculs</h3>
+
+
+
+                        <p>1. Placez un caisson (point de départ)</p>
+
+
+
+                        <p>2. Ajoutez des bouches et connectez-les avec des conduits</p>
+
+
+
+                        <p>3. Définissez le débit pour chaque bouche dans le panneau de propriétés</p>
+
+
+
+                        <p>4. Sélectionnez le sens de l'air (Soufflage ou Aspiration)</p>
+
+
+
+                        <p>5. Cliquez sur "Calculer" pour dimensionner automatiquement le réseau</p>
+
+
+
+                    </div>
+
+
+
+                    <div class="help-section">
+
+
+
+                        <h3>📄 Export PDF</h3>
+
+
+
+                        <p>Exportez votre réseau avec toutes les informations : schéma, débits, dimensions, pertes de charge.</p>
+
+
+
+                    </div>
+
+
+
+                    <div class="help-section">
+
+
+
+                        <h3>📊 Normes utilisées</h3>
+
+
+
+                        <p>L'application utilise les normes NF EN 13779 (Europe) et ASHRAE (États-Unis) pour les calculs.</p>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+                <div class="modal-footer">
+
+
+
+                    <button id="close-help-footer" class="btn">Fermer</button>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Modale de confirmation -->
+
+
+
+        <div id="confirm-modal" class="modal">
+
+
+
+            <div class="modal-content small">
+
+
+
+                <div class="modal-header">
+
+
+
+                    <h3 id="confirm-title">Confirmation</h3>
+
+
+
+                    <button id="close-confirm" class="close-btn">×</button>
+
+
+
+                </div>
+
+
+
+                <div class="modal-body">
+
+
+
+                    <p id="confirm-message">Êtes-vous sûr de vouloir effacer tout le réseau ?</p>
+
+
+
+                </div>
+
+
+
+                <div class="modal-footer">
+
+
+
+                    <button id="confirm-no" class="btn secondary">Non</button>
+
+
+
+                    <button id="confirm-yes" class="btn primary">Oui</button>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <!-- Notifications -->
+
+
+
+        <div id="notifications" class="notifications"></div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <script type="module" src="/src/index.js"></script>
+
+
+
+</body>
+
+
+
+</html>
+
+
+

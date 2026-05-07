@@ -1,41 +1,755 @@
 <!DOCTYPE html>
-
-
-
 <html lang="fr">
-
-
-
 <head>
-
-
-
     <meta charset="UTF-8">
-
-
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
-
     <title>Design Ventilation - Calcul de réseaux de ventilation</title>
+    <style>/* ===== Variables CSS ===== */
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --background-color: #f8fafc;
+    --surface-color: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-light: #94a3b8;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --transition: all 0.2s ease;
+}
 
+/* ===== Reset et Base ===== */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
 
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
 
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
+/* ===== Barre d'outils ===== */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    gap: 1rem;
+    z-index: 100;
+}
 
+.toolbar-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 
-    <link rel="stylesheet" href="src/styles.css">
+.toolbar-section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.tool-btn, .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 60px;
+    height: 50px;
+}
+
+.tool-btn:hover, .action-btn:hover {
+    background: var(--background-color);
+    border-color: var(--primary-color);
+}
+
+.tool-btn.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.tool-btn .icon {
+    font-size: 1.25rem;
+}
+
+.tool-btn .label, .action-btn .label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+.flow-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.flow-select:hover,
+.flow-select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.help-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.help-btn:hover {
+    background: var(--background-color);
+    border-color: var(--primary-color);
+}
+
+.help-btn .icon {
+    font-size: 1.25rem;
+}
+
+/* ===== Zone de dessin ===== */
+.drawing-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface-color);
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    touch-action: none;
+    background: linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+                linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+.canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* ===== Panneaux ===== */
+.properties-panel,
+.results-panel,
+.validation-panel {
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
+    width: 300px;
+    max-height: 80vh;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    transform: translateY(0);
+    transition: var(--transition);
+}
+
+.properties-panel {
+    right: 320px;
+    bottom: 1rem;
+}
+
+.results-panel {
+    right: 1rem;
+    bottom: 1rem;
+}
+
+.validation-panel {
+    right: 630px;
+    bottom: 1rem;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--background-color);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.panel-header h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.close-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.close-btn:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+.panel-content {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.empty-message {
+    color: var(--text-light);
+    text-align: center;
+    padding: 1rem;
+    font-style: italic;
+}
+
+/* ===== Formulaires ===== */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    transition: var(--transition);
+}
+
+.form-input:focus,
+.form-select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input.error {
+    border-color: var(--danger-color);
+}
+
+.form-error {
+    color: var(--danger-color);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* ===== Boutons ===== */
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn.primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn.primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn.secondary {
+    background: var(--background-color);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn.secondary:hover {
+    background: var(--border-color);
+}
+
+.btn.danger {
+    background: var(--danger-color);
+    color: white;
+}
+
+.btn.danger:hover {
+    background: #dc2626;
+}
+
+/* ===== Modales ===== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content.small {
+    max-width: 400px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2,
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-body .help-section {
+    margin-bottom: 1.5rem;
+}
+
+.modal-body .help-section:last-child {
+    margin-bottom: 0;
+}
+
+.modal-body .help-section h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.modal-body .help-section p,
+.modal-body .help-section li {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body .help-section ul {
+    padding-left: 1.25rem;
+}
+
+.modal-body .help-section li {
+    margin-bottom: 0.25rem;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--background-color);
+}
+
+/* ===== Notifications ===== */
+.notifications {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 3000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.notification {
+    padding: 0.75rem 1rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification.success {
+    border-left: 4px solid var(--success-color);
+}
+
+.notification.warning {
+    border-left: 4px solid var(--warning-color);
+}
+
+.notification.error {
+    border-left: 4px solid var(--danger-color);
+}
+
+.notification.info {
+    border-left: 4px solid var(--primary-color);
+}
+
+.notification .icon {
+    font-size: 1.25rem;
+}
+
+.notification .message {
+    flex: 1;
+    font-size: 0.875rem;
+}
+
+.notification .close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    padding: 0.25rem;
+    transition: var(--transition);
+}
+
+.notification .close:hover {
+    color: var(--text-primary);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ===== Éléments du réseau (styles pour le rendu) ===== */
+/* Ces styles sont utilisés pour le rendu des éléments sur le canvas */
+
+/* Couleurs des éléments */
+:root {
+    --caisson-color: #1e40af;
+    --bouche-color: #059669;
+    --conduit-round-color: #6b7280;
+    --conduit-rect-color: #4b5563;
+    --supply-color: #3b82f6;
+    --extract-color: #ef4444;
+    --selected-color: #f59e0b;
+    --highlight-color: #84cc16;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1200px) {
+    .properties-panel,
+    .validation-panel {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0.5rem;
+    }
+
+    .toolbar-section {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .tool-btn,
+    .action-btn {
+        min-width: 50px;
+        height: 45px;
+    }
+
+    .tool-btn .label,
+    .action-btn .label {
+        display: none;
+    }
+
+    .flow-select {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    .results-panel {
+        width: 100%;
+        max-width: 100%;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--secondary-color);
+}
+
+/* ===== Animation des flèches (sens de l'air) ===== */
+@keyframes flowAnimation {
+    0% {
+        opacity: 0;
+        transform: translateX(0);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+}
+
+.flow-arrow {
+    animation: flowAnimation 1.5s infinite;
+}
+
+/* ===== Styles pour l'export PDF ===== */
+.pdf-content {
+    font-family: Arial, sans-serif;
+    page-break-inside: avoid;
+}
+
+.pdf-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.pdf-section {
+    margin-bottom: 20px;
+}
+
+.pdf-section h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #555;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+.pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+.pdf-table th,
+.pdf-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.pdf-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.pdf-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+/* ===== Info-bulles ===== */
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 3000;
+    white-space: nowrap;
+    box-shadow: var(--shadow-lg);
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
+/* ===== Badges ===== */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge.success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge.error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge.info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* ===== Progress bar ===== */
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--background-color);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.progress-bar .progress {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+</style>
+    <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
 </head>
-
-
-
 <body>
-
-
-
-    <div id="app">
+<div id="app">
 
 
 
@@ -695,15 +1409,4621 @@
     <script src="src/utils/pdfExport.js"></script>
     <script src="src/app/VentilationApp.js"></script>
     <script src="src/index.js"></script>
+    <script>
+/**
+ * Classe représentant un point 2D
+ */
+window.Point = class Point {
+    constructor(x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+    }
+
+    /**
+     * Calcule la distance entre ce point et un autre
+     * @param {Point} other - L'autre point
+     * @returns {number} La distance en pixels
+     */
+    distanceTo(other) {
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /**
+     * Calcule l'angle entre ce point et un autre (en radians)
+     * @param {Point} other - L'autre point
+     * @returns {number} L'angle en radians
+     */
+    angleTo(other) {
+        const dx = other.x - this.x;
+        const dy = other.y - this.y;
+        return Math.atan2(dy, dx);
+    }
+
+    /**
+     * Calcule le point intermédiaire entre ce point et un autre
+     * @param {Point} other - L'autre point
+     * @param {number} ratio - Ratio (0 = ce point, 1 = l'autre point)
+     * @returns {Point} Le point intermédiaire
+     */
+    lerp(other, ratio) {
+        const x = this.x + (other.x - this.x) * ratio;
+        const y = this.y + (other.y - this.y) * ratio;
+        return new window.Point(x, y);
+    }
+
+    /**
+     * Vérifie si ce point est égal à un autre
+     * @param {Point} other - L'autre point
+     * @param {number} tolerance - Tolérance pour la comparaison
+     * @returns {boolean} Vrai si les points sont égaux
+     */
+    equals(other, tolerance = 0.001) {
+        return Math.abs(this.x - other.x) < tolerance && 
+               Math.abs(this.y - other.y) < tolerance;
+    }
+
+    /**
+     * Clone ce point
+     * @returns {Point} Une copie de ce point
+     */
+    clone() {
+        return new window.Point(this.x, this.y);
+    }
+
+    /**
+     * Convertit en objet simple
+     * @returns {Object} Objet avec les propriétés x et y
+     */
+    toJSON() {
+        return { x: this.x, y: this.y };
+    }
+
+    /**
+     * Crée un Point à partir d'un objet
+     * @param {Object} obj - Objet avec les propriétés x et y
+     * @returns {Point} Le point créé
+     */
+    static fromJSON(obj) {
+        return new window.Point(obj.x, obj.y);
+    }
+};
+
+/**
+ * Classe de base pour tous les éléments du réseau de ventilation
+ */
+window.Element = class Element {
+    static nextId = 1;
+    static prefix = 'E';
+
+    constructor(x, y) {
+        this.id = `${window.Element.prefix}${window.Element.nextId++}`;
+        this.x = x;
+        this.y = y;
+        this.selected = false;
+        this.connections = []; // IDs des éléments connectés
+    }
+
+    /**
+     * Vérifie si le point (x, y) est dans cet élément
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @param {number} tolerance - Tolérance pour la sélection
+     * @returns {boolean} Vrai si le point est dans l'élément
+     */
+    contains(x, y, tolerance = 10) {
+        // À implémenter dans les classes dérivées
+        return false;
+    }
+
+    /**
+     * Dessine l'élément sur le canvas
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     */
+    draw(ctx, scale = 1) {
+        // À implémenter dans les classes dérivées
+    }
+
+    /**
+     * Dessine l'élément en surbrillance
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     */
+    drawHighlight(ctx, scale = 1) {
+        // À implémenter dans les classes dérivées
+    }
+
+    /**
+     * Obtient le centre de l'élément
+     * @returns {Object} Point avec x et y
+     */
+    getCenter() {
+        return { x: this.x, y: this.y };
+    }
+
+    /**
+     * Ajoute une connexion à un autre élément
+     * @param {string} elementId - ID de l'élément à connecter
+     */
+    addConnection(elementId) {
+        if (!this.connections.includes(elementId)) {
+            this.connections.push(elementId);
+        }
+    }
+
+    /**
+     * Supprime une connexion
+     * @param {string} elementId - ID de l'élément à déconnecter
+     */
+    removeConnection(elementId) {
+        this.connections = this.connections.filter(id => id !== elementId);
+    }
+
+    /**
+     * Vérifie si l'élément est connecté à un autre
+     * @param {string} elementId - ID de l'élément
+     * @returns {boolean} Vrai si connecté
+     */
+    isConnectedTo(elementId) {
+        return this.connections.includes(elementId);
+    }
+
+    /**
+     * Obtient toutes les connexions
+     * @returns {string[]} Tableau des IDs connectés
+     */
+    getConnections() {
+        return [...this.connections];
+    }
+
+    /**
+     * Convertit en objet pour la sérialisation
+     * @returns {Object} Objet sérialisé
+     */
+    toJSON() {
+        return {
+            id: this.id,
+            x: this.x,
+            y: this.y,
+            connections: [...this.connections]
+        };
+    }
+
+    /**
+     * Crée un élément à partir d'un objet JSON
+     * @param {Object} data - Données JSON
+     * @returns {Element} L'élément créé
+     */
+    static fromJSON(data) {
+        const element = new window.Element(data.x, data.y);
+        element.id = data.id;
+        element.connections = [...data.connections];
+        return element;
+    }
+
+    /**
+     * Réinitialise le compteur d'IDs
+     */
+    static resetIdCounter() {
+        window.Element.nextId = 1;
+    }
+
+    /**
+     * Définit le préfixe pour les IDs
+     * @param {string} prefix - Nouveau préfixe
+     */
+    static setPrefix(prefix) {
+        window.Element.prefix = prefix;
+    }
+};
+
+/**
+ * Classe représentant un caisson de ventilation
+ */
+
+window.Caisson = class Caisson extends window.Element {
+    static nextId = 1;
+    static prefix = 'C';
+
+    constructor(x, y) {
+        super(x, y);
+        this.id = `${window.Caisson.prefix}${window.Caisson.nextId++}`;
+        this.name = `Caisson ${window.Caisson.nextId - 1}`;
+        this.width = 60;
+        this.height = 60;
+        this.flowRate = 0; // m³/h - sera calculé
+        this.material = 'acier'; // acier, aluminium, flexible
+        this.pressure = 0; // Pa - pression disponible
+        this.type = 'caisson';
+    }
+
+    /**
+     * Vérifie si le point (x, y) est dans le caisson
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @param {number} tolerance - Tolérance pour la sélection
+     * @returns {boolean} Vrai si le point est dans le caisson
+     */
+    contains(x, y, tolerance = 10) {
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+        return x >= this.x - halfWidth - tolerance &&
+               x <= this.x + halfWidth + tolerance &&
+               y >= this.y - halfHeight - tolerance &&
+               y <= this.y + halfHeight + tolerance;
+    }
+
+    /**
+     * Dessine le caisson sur le canvas
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
+     */
+    draw(ctx, scale = 1, flowDirection = 'supply') {
+        const halfWidth = (this.width * scale) / 2;
+        const halfHeight = (this.height * scale) / 2;
+
+        // Corps du caisson
+        ctx.fillStyle = this.selected ? '#f59e0b' : '#1e40af';
+        ctx.strokeStyle = this.selected ? '#d97706' : '#1e3a8a';
+        ctx.lineWidth = 2 * scale;
+
+        // Dessiner le rectangle principal
+        ctx.beginPath();
+        ctx.rect(
+            this.x * scale - halfWidth,
+            this.y * scale - halfHeight,
+            this.width * scale,
+            this.height * scale
+        );
+        ctx.fill();
+        ctx.stroke();
+
+        // Ajouter une icône de ventilateur
+        const fanSize = this.width * scale * 0.4;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(
+            this.x * scale,
+            this.y * scale,
+            fanSize / 2,
+            0,
+            Math.PI * 2
+        );
+        ctx.fill();
+
+        // Dessiner les pales du ventilateur
+        ctx.strokeStyle = '#1e40af';
+        ctx.lineWidth = 1.5 * scale;
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI) / 2;
+            const startX = this.x * scale + Math.cos(angle) * (fanSize / 3);
+            const startY = this.y * scale + Math.sin(angle) * (fanSize / 3);
+            const endX = this.x * scale + Math.cos(angle) * (fanSize / 2);
+            const endY = this.y * scale + Math.sin(angle) * (fanSize / 2);
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+
+        // Indication du sens de l'air
+        if (flowDirection === 'supply') {
+            ctx.fillStyle = '#3b82f6';
+        } else {
+            ctx.fillStyle = '#ef4444';
+        }
+        ctx.font = `${12 * scale}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+            flowDirection === 'supply' ? 'S' : 'A',
+            this.x * scale,
+            this.y * scale + halfHeight + 15 * scale
+        );
+
+        // Dessiner le nom
+        ctx.fillStyle = '#000000';
+        ctx.font = `${10 * scale}px Arial`;
+        ctx.fillText(
+            this.id,
+            this.x * scale,
+            this.y * scale - halfHeight - 15 * scale
+        );
+
+        // Dessiner les informations de débit si disponible
+        if (this.flowRate > 0) {
+            ctx.fillStyle = '#000000';
+            ctx.font = `${10 * scale}px Arial`;
+            ctx.fillText(
+                `${this.flowRate} m³/h`,
+                this.x * scale,
+                this.y * scale + halfHeight + 30 * scale
+            );
+        }
+    }
+
+    /**
+     * Dessine le caisson en surbrillance
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     */
+    drawHighlight(ctx, scale = 1) {
+        const halfWidth = (this.width * scale) / 2;
+        const halfHeight = (this.height * scale) / 2;
+
+        ctx.strokeStyle = '#84cc16';
+        ctx.lineWidth = 3 * scale;
+        ctx.setLineDash([5 * scale, 5 * scale]);
+
+        ctx.beginPath();
+        ctx.rect(
+            this.x * scale - halfWidth - 5 * scale,
+            this.y * scale - halfHeight - 5 * scale,
+            this.width * scale + 10 * scale,
+            this.height * scale + 10 * scale
+        );
+        ctx.stroke();
+
+        ctx.setLineDash([]);
+    }
+
+    /**
+     * Obtient les points de connexion (pour les conduits)
+     * @returns {Array} Tableau de points de connexion
+     */
+    getConnectionPoints() {
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+
+        return [
+            { x: this.x - halfWidth, y: this.y }, // Gauche
+            { x: this.x + halfWidth, y: this.y }, // Droite
+            { x: this.x, y: this.y - halfHeight }, // Haut
+            { x: this.x, y: this.y + halfHeight }  // Bas
+        ];
+    }
+
+    /**
+     * Obtient le point de connexion le plus proche
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @returns {Object} Point de connexion
+     */
+    getClosestConnectionPoint(x, y) {
+        const points = this.getConnectionPoints();
+        let closestPoint = points[0];
+        let minDistance = Infinity;
+
+        for (const point of points) {
+            const dx = x - point.x;
+            const dy = y - point.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = point;
+            }
+        }
+
+        return closestPoint;
+    }
+
+    /**
+     * Convertit en objet pour la sérialisation
+     * @returns {Object} Objet sérialisé
+     */
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            name: this.name,
+            width: this.width,
+            height: this.height,
+            flowRate: this.flowRate,
+            material: this.material,
+            pressure: this.pressure,
+            type: this.type
+        };
+    }
+
+    /**
+     * Crée un caisson à partir d'un objet JSON
+     * @param {Object} data - Données JSON
+     * @returns {Caisson} Le caisson créé
+     */
+    static fromJSON(data) {
+        const caisson = new window.Caisson(data.x, data.y);
+        caisson.id = data.id;
+        caisson.name = data.name || caisson.name;
+        caisson.width = data.width || caisson.width;
+        caisson.height = data.height || caisson.height;
+        caisson.flowRate = data.flowRate || caisson.flowRate;
+        caisson.material = data.material || caisson.material;
+        caisson.pressure = data.pressure || caisson.pressure;
+        caisson.connections = [...data.connections];
+        return caisson;
+    }
+
+    /**
+     * Réinitialise le compteur d'IDs
+     */
+    static resetIdCounter() {
+        window.Caisson.nextId = 1;
+    }
+};
+
+/**
+ * Classe représentant une bouche de ventilation
+ */
+
+window.Bouche = class Bouche extends window.Element {
+    static nextId = 1;
+    static prefix = 'B';
+
+    constructor(x, y) {
+        super(x, y);
+        this.id = `${window.Bouche.prefix}${window.Bouche.nextId++}`;
+        this.name = `Bouche ${window.Bouche.nextId - 1}`;
+        this.width = 30;
+        this.height = 30;
+        this.flowRate = 0; // m³/h - débit de la bouche
+        this.type = 'bouche';
+        this.airType = 'supply'; // supply ou extract (peut être différent du réseau)
+        this.shape = 'square'; // square, round
+        this.size = 15; // Taille de la bouche (diamètre ou côté)
+    }
+
+    /**
+     * Vérifie si le point (x, y) est dans la bouche
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @param {number} tolerance - Tolérance pour la sélection
+     * @returns {boolean} Vrai si le point est dans la bouche
+     */
+    contains(x, y, tolerance = 10) {
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+        return x >= this.x - halfWidth - tolerance &&
+               x <= this.x + halfWidth + tolerance &&
+               y >= this.y - halfHeight - tolerance &&
+               y <= this.y + halfHeight + tolerance;
+    }
+
+    /**
+     * Dessine la bouche sur le canvas
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     * @param {string} flowDirection - Sens de l'air du réseau ('supply' ou 'extract')
+     */
+    draw(ctx, scale = 1, flowDirection = 'supply') {
+        const halfWidth = (this.width * scale) / 2;
+        const halfHeight = (this.height * scale) / 2;
+
+        // Couleur en fonction du sens de l'air
+        const isSupply = this.airType === 'supply' || flowDirection === 'supply';
+        const baseColor = isSupply ? '#059669' : '#dc2626';
+        
+        ctx.fillStyle = this.selected ? '#f59e0b' : baseColor;
+        ctx.strokeStyle = this.selected ? '#d97706' : (isSupply ? '#047857' : '#b91c1c');
+        ctx.lineWidth = 2 * scale;
+
+        // Dessiner la forme de la bouche
+        if (this.shape === 'round') {
+            ctx.beginPath();
+            ctx.arc(
+                this.x * scale,
+                this.y * scale,
+                this.width * scale / 2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Forme carrée
+            ctx.beginPath();
+            ctx.rect(
+                this.x * scale - halfWidth,
+                this.y * scale - halfHeight,
+                this.width * scale,
+                this.height * scale
+            );
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Dessiner les grilles de la bouche
+        const gridSize = this.width * scale * 0.3;
+        const gridSpacing = this.width * scale * 0.1;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1 * scale;
+
+        if (this.shape === 'round') {
+            // Grilles pour bouche ronde
+            for (let i = -1; i <= 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(
+                    this.x * scale - gridSize / 2,
+                    this.y * scale + i * gridSpacing
+                );
+                ctx.lineTo(
+                    this.x * scale + gridSize / 2,
+                    this.y * scale + i * gridSpacing
+                );
+                ctx.stroke();
+            }
+        } else {
+            // Grilles pour bouche carrée
+            for (let i = -1; i <= 1; i++) {
+                // Lignes horizontales
+                ctx.beginPath();
+                ctx.moveTo(
+                    this.x * scale - gridSize / 2,
+                    this.y * scale + i * gridSpacing
+                );
+                ctx.lineTo(
+                    this.x * scale + gridSize / 2,
+                    this.y * scale + i * gridSpacing
+                );
+                ctx.stroke();
+
+                // Lignes verticales
+                ctx.beginPath();
+                ctx.moveTo(
+                    this.x * scale + i * gridSpacing,
+                    this.y * scale - gridSize / 2
+                );
+                ctx.lineTo(
+                    this.x * scale + i * gridSpacing,
+                    this.y * scale + gridSize / 2
+                );
+                ctx.stroke();
+            }
+        }
+
+        // Dessiner le nom
+        ctx.fillStyle = '#000000';
+        ctx.font = `${10 * scale}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+            this.id,
+            this.x * scale,
+            this.y * scale - halfHeight - 15 * scale
+        );
+
+        // Dessiner le débit
+        if (this.flowRate > 0) {
+            ctx.fillStyle = '#000000';
+            ctx.font = `${10 * scale}px Arial`;
+            ctx.fillText(
+                `${this.flowRate} m³/h`,
+                this.x * scale,
+                this.y * scale + halfHeight + 15 * scale
+            );
+        }
+
+        // Indication du sens de l'air
+        ctx.fillStyle = isSupply ? '#3b82f6' : '#ef4444';
+        ctx.font = `${12 * scale}px Arial`;
+        ctx.fillText(
+            isSupply ? '→' : '←',
+            this.x * scale + halfWidth + 10 * scale,
+            this.y * scale
+        );
+    }
+
+    /**
+     * Dessine la bouche en surbrillance
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     */
+    drawHighlight(ctx, scale = 1) {
+        const halfWidth = (this.width * scale) / 2;
+        const halfHeight = (this.height * scale) / 2;
+
+        ctx.strokeStyle = '#84cc16';
+        ctx.lineWidth = 3 * scale;
+        ctx.setLineDash([5 * scale, 5 * scale]);
+
+        if (this.shape === 'round') {
+            ctx.beginPath();
+            ctx.arc(
+                this.x * scale,
+                this.y * scale,
+                this.width * scale / 2 + 5 * scale,
+                0,
+                Math.PI * 2
+            );
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.rect(
+                this.x * scale - halfWidth - 5 * scale,
+                this.y * scale - halfHeight - 5 * scale,
+                this.width * scale + 10 * scale,
+                this.height * scale + 10 * scale
+            );
+            ctx.stroke();
+        }
+
+        ctx.setLineDash([]);
+    }
+
+    /**
+     * Obtient les points de connexion (pour les conduits)
+     * @returns {Array} Tableau de points de connexion
+     */
+    getConnectionPoints() {
+        const halfWidth = this.width / 2;
+        const halfHeight = this.height / 2;
+
+        return [
+            { x: this.x - halfWidth, y: this.y }, // Gauche
+            { x: this.x + halfWidth, y: this.y }, // Droite
+            { x: this.x, y: this.y - halfHeight }, // Haut
+            { x: this.x, y: this.y + halfHeight }  // Bas
+        ];
+    }
+
+    /**
+     * Obtient le point de connexion le plus proche
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @returns {Object} Point de connexion
+     */
+    getClosestConnectionPoint(x, y) {
+        const points = this.getConnectionPoints();
+        let closestPoint = points[0];
+        let minDistance = Infinity;
+
+        for (const point of points) {
+            const dx = x - point.x;
+            const dy = y - point.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestPoint = point;
+            }
+        }
+
+        return closestPoint;
+    }
+
+    /**
+     * Convertit en objet pour la sérialisation
+     * @returns {Object} Objet sérialisé
+     */
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            name: this.name,
+            width: this.width,
+            height: this.height,
+            flowRate: this.flowRate,
+            type: this.type,
+            airType: this.airType,
+            shape: this.shape,
+            size: this.size
+        };
+    }
+
+    /**
+     * Crée une bouche à partir d'un objet JSON
+     * @param {Object} data - Données JSON
+     * @returns {Bouche} La bouche créée
+     */
+    static fromJSON(data) {
+        const bouche = new window.Bouche(data.x, data.y);
+        bouche.id = data.id;
+        bouche.name = data.name || bouche.name;
+        bouche.width = data.width || bouche.width;
+        bouche.height = data.height || bouche.height;
+        bouche.flowRate = data.flowRate || bouche.flowRate;
+        bouche.airType = data.airType || bouche.airType;
+        bouche.shape = data.shape || bouche.shape;
+        bouche.size = data.size || bouche.size;
+        bouche.connections = [...data.connections];
+        return bouche;
+    }
+
+    /**
+     * Réinitialise le compteur d'IDs
+     */
+    static resetIdCounter() {
+        window.Bouche.nextId = 1;
+    }
+};
+
+/**
+ * Classe représentant un conduit de ventilation
+ */
+
+// Diamètres commerciaux standard pour les conduits ronds (en mm)
+window.STANDARD_DIAMETERS = [
+    80, 100, 125, 140, 160, 180, 200, 225, 250, 280, 315, 355, 400, 450, 500, 
+    560, 630, 710, 800, 900, 1000, 1120, 1250, 1400, 1600
+];
+
+// Dimensions standard pour les conduits rectangulaires (en mm)
+window.STANDARD_RECT_SIZES = [
+    { width: 100, height: 50 },
+    { width: 125, height: 60 },
+    { width: 160, height: 80 },
+    { width: 200, height: 100 },
+    { width: 250, height: 125 },
+    { width: 315, height: 150 },
+    { width: 400, height: 200 },
+    { width: 500, height: 250 },
+    { width: 630, height: 315 },
+    { width: 800, height: 400 },
+    { width: 1000, height: 500 },
+    { width: 1250, height: 630 }
+];
+
+window.Conduit = class Conduit extends window.Element {
+    static nextId = 1;
+    static prefix = 'S';
+
+    constructor(startX, startY, endX, endY, isRound = true) {
+        super((startX + endX) / 2, (startY + endY) / 2);
+        this.id = `${window.Conduit.prefix}${window.Conduit.nextId++}`;
+        this.start = new window.Point(startX, startY);
+        this.end = new window.Point(endX, endY);
+        this.isRound = isRound; // true = rond, false = rectangulaire
+        this.type = 'conduit';
+        this.flowRate = 0; // m³/h - débit dans le conduit
+        this.velocity = 0; // m/s - vitesse de l'air
+        this.pressureDrop = 0; // Pa - perte de charge
+        this.material = 'acier'; // acier, aluminium, flexible
+        this.roughness = 0.00015; // Rugosité en mètres (acier galvanisé)
+        
+        // Dimensions
+        this.diameter = 100; // mm - pour les conduits ronds
+        this.width = 100; // mm - pour les conduits rectangulaires
+        this.height = 50; // mm - pour les conduits rectangulaires
+        
+        // Longueur réelle (calculée)
+        this.length = this.calculateLength();
+        
+        // Éléments connectés
+        this.startElementId = null; // ID de l'élément de départ
+        this.endElementId = null; // ID de l'élément d'arrivée
+        
+        // Points de contrôle pour les courbes
+        this.controlPoints = [];
+    }
+
+    /**
+     * Calcule la longueur du conduit
+     * @returns {number} Longueur en pixels
+     */
+    calculateLength() {
+        return this.start.distanceTo(this.end);
+    }
+
+    /**
+     * Vérifie si le point (x, y) est sur le conduit
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @param {number} tolerance - Tolérance pour la sélection
+     * @returns {boolean} Vrai si le point est sur le conduit
+     */
+    contains(x, y, tolerance = 10) {
+        // Calculer la distance du point à la ligne
+        const lineLength = this.length;
+        if (lineLength === 0) return false;
+
+        // Projection du point sur la ligne
+        const u = ((x - this.start.x) * (this.end.x - this.start.x) + 
+                  (y - this.start.y) * (this.end.y - this.start.y)) / 
+                 (lineLength * lineLength);
+
+        // Point projeté
+        const px = this.start.x + u * (this.end.x - this.start.x);
+        const py = this.start.y + u * (this.end.y - this.start.y);
+
+        // Distance du point à la ligne
+        const dx = x - px;
+        const dy = y - py;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Vérifier si le point projeté est sur le segment
+        const onSegment = u >= 0 && u <= 1;
+
+        return onSegment && distance <= tolerance;
+    }
+
+    /**
+     * Dessine le conduit sur le canvas
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
+     * @param {boolean} showFlow - Afficher les flèches de flux
+     */
+    draw(ctx, scale = 1, flowDirection = 'supply', showFlow = false) {
+        const startX = this.start.x * scale;
+        const startY = this.start.y * scale;
+        const endX = this.end.x * scale;
+        const endY = this.end.y * scale;
+
+        // Couleur en fonction du sens de l'air
+        const baseColor = flowDirection === 'supply' ? '#3b82f6' : '#ef4444';
+        
+        ctx.strokeStyle = this.selected ? '#f59e0b' : baseColor;
+        ctx.lineWidth = this.isRound ? 4 * scale : 3 * scale;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Dessiner la ligne du conduit
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        
+        // Si il y a des points de contrôle, dessiner une courbe
+        if (this.controlPoints.length > 0) {
+            ctx.moveTo(startX, startY);
+            
+            // Premier segment
+            const cp1 = this.controlPoints[0];
+            ctx.quadraticCurveTo(
+                cp1.x * scale, cp1.y * scale,
+                (this.controlPoints.length > 1 ? this.controlPoints[1].x : this.end.x) * scale,
+                (this.controlPoints.length > 1 ? this.controlPoints[1].y : this.end.y) * scale
+            );
+            
+            // Si il y a plus de points de contrôle
+            if (this.controlPoints.length > 2) {
+                for (let i = 1; i < this.controlPoints.length - 1; i++) {
+                    const cp = this.controlPoints[i];
+                    const nextCp = this.controlPoints[i + 1];
+                    ctx.quadraticCurveTo(
+                        cp.x * scale, cp.y * scale,
+                        nextCp.x * scale, nextCp.y * scale
+                    );
+                }
+                
+                // Dernier segment
+                const lastCp = this.controlPoints[this.controlPoints.length - 1];
+                ctx.quadraticCurveTo(
+                    lastCp.x * scale, lastCp.y * scale,
+                    endX, endY
+                );
+            }
+        } else {
+            // Ligne droite
+            ctx.lineTo(endX, endY);
+        }
+        
+        ctx.stroke();
+
+        // Dessiner les flèches de flux si activé
+        if (showFlow && this.flowRate > 0) {
+            this.drawFlowArrows(ctx, scale, flowDirection);
+        }
+
+        // Dessiner le nom du conduit
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        
+        ctx.fillStyle = '#000000';
+        ctx.font = `${10 * scale}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Positionner le texte le long du conduit
+        const angle = this.start.angleTo(this.end);
+        const offsetX = Math.cos(angle + Math.PI / 2) * 15 * scale;
+        const offsetY = Math.sin(angle + Math.PI / 2) * 15 * scale;
+        
+        ctx.fillText(this.id, midX + offsetX, midY + offsetY);
+
+        // Dessiner les informations de débit et dimension
+        if (this.flowRate > 0) {
+            const infoText = this.isRound 
+                ? `${this.flowRate} m³/h, Ø${this.diameter}mm`
+                : `${this.flowRate} m³/h, ${this.width}×${this.height}mm`;
+            
+            ctx.font = `${9 * scale}px Arial`;
+            ctx.fillText(
+                infoText,
+                midX + offsetX,
+                midY + offsetY + 15 * scale
+            );
+        }
+    }
+
+    /**
+     * Dessine les flèches de flux
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     * @param {string} flowDirection - Sens de l'air
+     */
+    drawFlowArrows(ctx, scale, flowDirection) {
+        const arrowSize = 8 * scale;
+        const spacing = 40 * scale;
+        const length = this.length * scale;
+        
+        // Calculer le nombre de flèches
+        const arrowCount = Math.max(1, Math.floor(length / spacing));
+        
+        const startX = this.start.x * scale;
+        const startY = this.start.y * scale;
+        const endX = this.end.x * scale;
+        const endY = this.end.y * scale;
+        
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const angle = Math.atan2(dy, dx);
+        
+        // Déterminer la direction des flèches
+        let arrowAngle = angle;
+        let startRatio = flowDirection === 'supply' ? 0.1 : 0.9;
+        let endRatio = flowDirection === 'supply' ? 0.9 : 0.1;
+        let step = (endRatio - startRatio) / (arrowCount - 1 || 1);
+
+        for (let i = 0; i < arrowCount; i++) {
+            const ratio = startRatio + i * step;
+            const x = startX + dx * ratio;
+            const y = startY + dy * ratio;
+            
+            // Dessiner la flèche
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(arrowAngle);
+            
+            ctx.fillStyle = flowDirection === 'supply' ? '#3b82f6' : '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-arrowSize, -arrowSize / 2);
+            ctx.lineTo(-arrowSize, arrowSize / 2);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.restore();
+        }
+    }
+
+    /**
+     * Dessine le conduit en surbrillance
+     * @param {CanvasRenderingContext2D} ctx - Contexte de dessin
+     * @param {number} scale - Échelle de dessin
+     */
+    drawHighlight(ctx, scale = 1) {
+        const startX = this.start.x * scale;
+        const startY = this.start.y * scale;
+        const endX = this.end.x * scale;
+        const endY = this.end.y * scale;
+
+        ctx.strokeStyle = '#84cc16';
+        ctx.lineWidth = 6 * scale;
+        ctx.setLineDash([5 * scale, 5 * scale]);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        
+        if (this.controlPoints.length > 0) {
+            ctx.moveTo(startX, startY);
+            
+            if (this.controlPoints.length > 1) {
+                ctx.quadraticCurveTo(
+                    this.controlPoints[0].x * scale, this.controlPoints[0].y * scale,
+                    this.controlPoints[1].x * scale, this.controlPoints[1].y * scale
+                );
+            }
+            
+            for (let i = 1; i < this.controlPoints.length - 1; i++) {
+                ctx.quadraticCurveTo(
+                    this.controlPoints[i].x * scale, this.controlPoints[i].y * scale,
+                    this.controlPoints[i + 1].x * scale, this.controlPoints[i + 1].y * scale
+                );
+            }
+            
+            if (this.controlPoints.length > 1) {
+                const lastCp = this.controlPoints[this.controlPoints.length - 1];
+                ctx.quadraticCurveTo(
+                    lastCp.x * scale, lastCp.y * scale,
+                    endX, endY
+                );
+            }
+        } else {
+            ctx.lineTo(endX, endY);
+        }
+        
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    /**
+     * Obtient le point central du conduit
+     * @returns {Point} Point central
+     */
+    getCenter() {
+        return new window.Point((this.start.x + this.end.x) / 2, (this.start.y + this.end.y) / 2);
+    }
+
+    /**
+     * Met à jour les points de départ et d'arrivée
+     * @param {number} startX - Nouvelle coordonnée X de départ
+     * @param {number} startY - Nouvelle coordonnée Y de départ
+     * @param {number} endX - Nouvelle coordonnée X d'arrivée
+     * @param {number} endY - Nouvelle coordonnée Y d'arrivée
+     */
+    updatePoints(startX, startY, endX, endY) {
+        this.start.x = startX;
+        this.start.y = startY;
+        this.end.x = endX;
+        this.end.y = endY;
+        this.x = (startX + endX) / 2;
+        this.y = (startY + endY) / 2;
+        this.length = this.calculateLength();
+    }
+
+    /**
+     * Ajoute un point de contrôle pour les courbes
+     * @param {Point} point - Point de contrôle à ajouter
+     */
+    addControlPoint(point) {
+        this.controlPoints.push(point);
+    }
+
+    /**
+     * Supprime tous les points de contrôle
+     */
+    clearControlPoints() {
+        this.controlPoints = [];
+    }
+
+    /**
+     * Vérifie si le conduit est horizontal
+     * @returns {boolean} Vrai si horizontal
+     */
+    isHorizontal() {
+        return Math.abs(this.start.y - this.end.y) < 0.001;
+    }
+
+    /**
+     * Vérifie si le conduit est vertical
+     * @returns {boolean} Vrai si vertical
+     */
+    isVertical() {
+        return Math.abs(this.start.x - this.end.x) < 0.001;
+    }
+
+    /**
+     * Calcule l'angle du conduit par rapport à l'horizontale
+     * @returns {number} Angle en radians
+     */
+    getAngle() {
+        return this.start.angleTo(this.end);
+    }
+
+    /**
+     * Convertit en objet pour la sérialisation
+     * @returns {Object} Objet sérialisé
+     */
+    toJSON() {
+        return {
+            ...super.toJSON(),
+            start: this.start.toJSON(),
+            end: this.end.toJSON(),
+            isRound: this.isRound,
+            type: this.type,
+            flowRate: this.flowRate,
+            velocity: this.velocity,
+            pressureDrop: this.pressureDrop,
+            material: this.material,
+            roughness: this.roughness,
+            diameter: this.diameter,
+            width: this.width,
+            height: this.height,
+            length: this.length,
+            startElementId: this.startElementId,
+            endElementId: this.endElementId,
+            controlPoints: this.controlPoints.map(p => p.toJSON())
+        };
+    }
+
+    /**
+     * Crée un conduit à partir d'un objet JSON
+     * @param {Object} data - Données JSON
+     * @returns {Conduit} Le conduit créé
+     */
+    static fromJSON(data) {
+        const conduit = new window.Conduit(
+            data.start.x, data.start.y,
+            data.end.x, data.end.y,
+            data.isRound
+        );
+        
+        conduit.id = data.id;
+        conduit.isRound = data.isRound;
+        conduit.flowRate = data.flowRate || conduit.flowRate;
+        conduit.velocity = data.velocity || conduit.velocity;
+        conduit.pressureDrop = data.pressureDrop || conduit.pressureDrop;
+        conduit.material = data.material || conduit.material;
+        conduit.roughness = data.roughness || conduit.roughness;
+        conduit.diameter = data.diameter || conduit.diameter;
+        conduit.width = data.width || conduit.width;
+        conduit.height = data.height || conduit.height;
+        conduit.length = data.length || conduit.length;
+        conduit.startElementId = data.startElementId || null;
+        conduit.endElementId = data.endElementId || null;
+        conduit.controlPoints = data.controlPoints 
+            ? data.controlPoints.map(p => window.Point.fromJSON(p))
+            : [];
+        conduit.connections = [...data.connections];
+        
+        return conduit;
+    }
+
+    /**
+     * Réinitialise le compteur d'IDs
+     */
+    static resetIdCounter() {
+        window.Conduit.nextId = 1;
+    }
+};
+
+/**
+ * Module pour les calculs de débit et dimensionnement
+ */
 
 
 
+// Constantes pour les calculs
+window.AIR_DENSITY = 1.2; // kg/m³ - densité de l'air à 20°C
+window.MAX_VELOCITY_SUPPLY = 8; // m/s - vitesse maximale recommandée pour le soufflage
+window.MAX_VELOCITY_EXTRACT = 10; // m/s - vitesse maximale recommandée pour l'aspiration
+window.MAX_VELOCITY_MAIN = 12; // m/s - vitesse maximale recommandée pour les conduits principaux
+window.MIN_VELOCITY = 2; // m/s - vitesse minimale recommandée
 
+// Normes de débit par type de local (m³/h par m²)
+window.FLOW_RATES_PER_AREA = {
+    'bureau': 30,
+    'salle_de_reunion': 40,
+    'salle_de_classe': 35,
+    'chambre': 25,
+    'cuisine': 60,
+    'salle_de_bain': 50,
+    'wc': 40,
+    'salle_de_sport': 50,
+    'restaurant': 45,
+    'magasin': 30,
+    'atelier': 40
+};
+
+/**
+ * Calcule le débit total d'un réseau
+ * @param {Array} bouches - Tableau des bouches
+ * @returns {number} Débit total en m³/h
+ */
+export function calculateTotalFlow(bouches) {
+    return bouches.reduce((total, bouche) => total + (bouche.flowRate || 0), 0);
+}
+
+/**
+ * Calcule les débits dans chaque conduit en fonction des bouches connectées
+ * @param {Array} conduits - Tableau des conduits
+ * @param {Array} bouches - Tableau des bouches
+ * @param {Array} caissons - Tableau des caissons
+ * @returns {Array} Tableau des conduits avec les débits mis à jour
+ */
+export function calculateConduitFlows(conduits, bouches, caissons) {
+    // Créer une carte des éléments par ID
+    const elementsMap = new Map();
+    [...bouches, ...caissons].forEach(el => elementsMap.set(el.id, el));
+
+    // Pour chaque conduit, calculer le débit en fonction des bouches connectées
+    return conduits.map(conduit => {
+        // Trouver les éléments connectés
+        const startElement = elementsMap.get(conduit.startElementId);
+        const endElement = elementsMap.get(conduit.endElementId);
+
+        // Si le conduit est connecté à une bouche, le débit est celui de la bouche
+        if (startElement && startElement.type === 'bouche') {
+            return { ...conduit, flowRate: startElement.flowRate };
+        }
+
+        if (endElement && endElement.type === 'bouche') {
+            return { ...conduit, flowRate: endElement.flowRate };
+        }
+
+        // Sinon, calculer le débit en fonction des bouches en aval
+        // (Cette logique sera améliorée avec le graphe de réseau)
+        return conduit;
+    });
+}
+
+/**
+ * Calcule le débit dans un conduit en fonction des bouches en aval
+ * @param {Object} conduit - Le conduit
+ * @param {Array} bouches - Tableau des bouches
+ * @param {Array} conduits - Tableau des conduits
+ * @param {Map} networkGraph - Graphe du réseau (elementId -> [connectedElementIds])
+ * @returns {number} Débit dans le conduit
+ */
+export function calculateConduitFlow(conduit, bouches, conduits, networkGraph) {
+    // Si le conduit est connecté directement à une bouche, retourner le débit de la bouche
+    const startElement = findElementById(conduit.startElementId, bouches, conduits);
+    const endElement = findElementById(conduit.endElementId, bouches, conduits);
+
+    if (startElement && startElement.type === 'bouche') {
+        return startElement.flowRate;
+    }
+
+    if (endElement && endElement.type === 'bouche') {
+        return endElement.flowRate;
+    }
+
+    // Sinon, calculer le débit en fonction des bouches en aval
+    // (Implémentation simplifiée - à améliorer avec un algorithme de parcours de graphe)
+    return 0;
+}
+
+/**
+ * Trouve un élément par son ID
+ * @param {string} id - ID de l'élément
+ * @param {Array} bouches - Tableau des bouches
+ * @param {Array} conduits - Tableau des conduits
+ * @param {Array} caissons - Tableau des caissons
+ * @returns {Object|null} L'élément trouvé ou null
+ */
+function findElementById(id, bouches, conduits, caissons = []) {
+    if (!id) return null;
+    
+    const allElements = [...bouches, ...conduits, ...caissons];
+    return allElements.find(el => el.id === id) || null;
+}
+
+/**
+ * Dimensionne un conduit rond en fonction du débit
+ * @param {number} flowRate - Débit en m³/h
+ * @param {number} maxVelocity - Vitesse maximale en m/s
+ * @returns {number} Diamètre en mm
+ */
+export function sizeRoundConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN) {
+    if (flowRate <= 0) return window.STANDARD_DIAMETERS[0];
+
+    // Convertir le débit de m³/h à m³/s
+    const flowRateM3s = flowRate / 3600;
+
+    // Calculer la section nécessaire : Q = V * A => A = Q / V
+    const area = flowRateM3s / maxVelocity;
+
+    // Calculer le diamètre : A = π * r² => r = sqrt(A / π) => d = 2 * r
+    const diameterM = Math.sqrt(area / Math.PI) * 2;
+    const diameterMm = diameterM * 1000;
+
+    // Trouver le diamètre standard le plus proche (supérieur ou égal)
+    return findClosestStandardDiameter(diameterMm);
+}
+
+/**
+ * Dimensionne un conduit rectangulaire en fonction du débit
+ * @param {number} flowRate - Débit en m³/h
+ * @param {number} maxVelocity - Vitesse maximale en m/s
+ * @param {number} aspectRatio - Rapport largeur/hauteur (optionnel)
+ * @returns {Object} Objet avec width et height en mm
+ */
+export function sizeRectConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN, aspectRatio = 2) {
+    if (flowRate <= 0) return window.STANDARD_RECT_SIZES[0];
+
+    // Convertir le débit de m³/h à m³/s
+    const flowRateM3s = flowRate / 3600;
+
+    // Calculer la section nécessaire
+    const area = flowRateM3s / maxVelocity;
+
+    // Calculer les dimensions en fonction du rapport d'aspect
+    const widthM = Math.sqrt(area * aspectRatio);
+    const heightM = widthM / aspectRatio;
+
+    const widthMm = widthM * 1000;
+    const heightMm = heightM * 1000;
+
+    // Trouver la taille standard la plus proche
+    return findClosestStandardRectSize(widthMm, heightMm);
+}
+
+/**
+ * Trouve le diamètre standard le plus proche (supérieur ou égal)
+ * @param {number} diameter - Diamètre en mm
+ * @returns {number} Diamètre standard
+ */
+function findClosestStandardDiameter(diameter) {
+    for (const stdDiameter of window.STANDARD_DIAMETERS) {
+        if (stdDiameter >= diameter) {
+            return stdDiameter;
+        }
+    }
+    return window.STANDARD_DIAMETERS[window.STANDARD_DIAMETERS.length - 1];
+}
+
+/**
+ * Trouve la taille rectangulaire standard la plus proche
+ * @param {number} width - Largeur en mm
+ * @param {number} height - Hauteur en mm
+ * @returns {Object} Taille standard avec width et height
+ */
+function findClosestStandardRectSize(width, height) {
+    let bestFit = window.STANDARD_RECT_SIZES[0];
+    let minDiff = Infinity;
+
+    for (const size of window.STANDARD_RECT_SIZES) {
+        const area = size.width * size.height;
+        const targetArea = width * height;
+        const diff = Math.abs(area - targetArea);
+
+        if (diff < minDiff) {
+            minDiff = diff;
+            bestFit = size;
+        }
+    }
+
+    return bestFit;
+}
+
+/**
+ * Calcule la vitesse de l'air dans un conduit
+ * @param {number} flowRate - Débit en m³/h
+ * @param {number} diameter - Diamètre en mm (pour les conduits ronds)
+ * @param {number} width - Largeur en mm (pour les conduits rectangulaires)
+ * @param {number} height - Hauteur en mm (pour les conduits rectangulaires)
+ * @param {boolean} isRound - Vrai si conduit rond
+ * @returns {number} Vitesse en m/s
+ */
+export function calculateVelocity(flowRate, diameter = 0, width = 0, height = 0, isRound = true) {
+    if (flowRate <= 0) return 0;
+
+    // Convertir le débit de m³/h à m³/s
+    const flowRateM3s = flowRate / 3600;
+
+    // Calculer la section en m²
+    let areaM2;
+    if (isRound) {
+        const radiusM = (diameter / 1000) / 2;
+        areaM2 = Math.PI * radiusM * radiusM;
+    } else {
+        const widthM = width / 1000;
+        const heightM = height / 1000;
+        areaM2 = widthM * heightM;
+    }
+
+    if (areaM2 <= 0) return 0;
+
+    // Vitesse = Débit / Section
+    return flowRateM3s / areaM2;
+}
+
+/**
+ * Vérifie si la vitesse est dans les limites recommandées
+ * @param {number} velocity - Vitesse en m/s
+ * @param {string} elementType - Type d'élément ('supply', 'extract', 'main')
+ * @returns {Object} Objet avec valid (boolean) et message (string)
+ */
+export function checkVelocityLimits(velocity, elementType = 'main') {
+    let maxVelocity;
+    switch (elementType) {
+        case 'supply':
+            maxVelocity = MAX_VELOCITY_SUPPLY;
+            break;
+        case 'extract':
+            maxVelocity = MAX_VELOCITY_EXTRACT;
+            break;
+        default:
+            maxVelocity = MAX_VELOCITY_MAIN;
+    }
+
+    if (velocity < MIN_VELOCITY) {
+        return {
+            valid: false,
+            message: `Vitesse trop faible (${velocity.toFixed(2)} m/s). Minimum recommandé : ${MIN_VELOCITY} m/s`
+        };
+    }
+
+    if (velocity > maxVelocity) {
+        return {
+            valid: false,
+            message: `Vitesse trop élevée (${velocity.toFixed(2)} m/s). Maximum recommandé pour ${elementType} : ${maxVelocity} m/s`
+        };
+    }
+
+    return { valid: true, message: `Vitesse acceptable (${velocity.toFixed(2)} m/s)` };
+}
+
+/**
+ * Calcule le débit recommandé pour un local en fonction de sa surface
+ * @param {number} area - Surface en m²
+ * @param {string} roomType - Type de local
+ * @returns {number} Débit recommandé en m³/h
+ */
+window.calculateRecommendedFlow = function(area, roomType = 'bureau') {
+    const rate = FLOW_RATES_PER_AREA[roomType] || FLOW_RATES_PER_AREA['bureau'];
+    return area * rate;
+}
+
+/**
+ * Dimensionne tous les conduits d'un réseau
+ * @param {Array} conduits - Tableau des conduits
+ * @param {Array} bouches - Tableau des bouches
+ * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
+ * @returns {Array} Tableau des conduits dimensionnés
+ */
+window.dimensionAllConduits = function(conduits, bouches, flowDirection = 'supply') {
+    // Créer une carte des bouches par ID
+    const bouchesMap = new Map(bouches.map(b => [b.id, b]));
+
+    return conduits.map(conduit => {
+        // Trouver les bouches connectées
+        const startBouche = bouchesMap.get(conduit.startElementId);
+        const endBouche = bouchesMap.get(conduit.endElementId);
+
+        // Déterminer le débit
+        let flowRate = 0;
+        if (startBouche) {
+            flowRate = startBouche.flowRate;
+        } else if (endBouche) {
+            flowRate = endBouche.flowRate;
+        }
+
+        // Dimensionner le conduit
+        const dimensionedConduit = { ...conduit, flowRate };
+
+        if (conduit.isRound) {
+            dimensionedConduit.diameter = sizeRoundConduit(flowRate);
+            dimensionedConduit.velocity = calculateVelocity(
+                flowRate, dimensionedConduit.diameter, 0, 0, true
+            );
+        } else {
+            const size = sizeRectConduit(flowRate);
+            dimensionedConduit.width = size.width;
+            dimensionedConduit.height = size.height;
+            dimensionedConduit.velocity = calculateVelocity(
+                flowRate, 0, dimensionedConduit.width, dimensionedConduit.height, false
+            );
+        }
+
+        return dimensionedConduit;
+    });
+}
+
+/**
+ * Calcule les débits dans un réseau en partant des bouches
+ * @param {Array} elements - Tous les éléments du réseau
+ * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
+ * @returns {Array} Tableau des éléments avec les débits mis à jour
+ */
+window.calculateNetworkFlows = function(elements, flowDirection = 'supply') {
+    // Séparer les éléments par type
+    const caissons = elements.filter(el => el.type === 'caisson');
+    const bouches = elements.filter(el => el.type === 'bouche');
+    const conduits = elements.filter(el => el.type === 'conduit');
+
+    // Si pas de caisson, retourner les éléments inchangés
+    if (caissons.length === 0) {
+        return elements;
+    }
+
+    // Calculer le débit total
+    const totalFlow = calculateTotalFlow(bouches);
+
+    // Mettre à jour le débit du caisson
+    const updatedCaissons = caissons.map(caisson => ({
+        ...caisson,
+        flowRate: totalFlow
+    }));
+
+    // Pour chaque conduit, calculer le débit en fonction des bouches connectées
+    // (Implémentation simplifiée - à améliorer avec un algorithme de parcours de graphe)
+    const updatedConduits = conduits.map(conduit => {
+        // Trouver les bouches connectées directement
+        const connectedBouches = bouches.filter(bouche => 
+            conduit.startElementId === bouche.id || conduit.endElementId === bouche.id
+        );
+
+        // Si connecté à une seule bouche, le débit est celui de la bouche
+        if (connectedBouches.length === 1) {
+            return {
+                ...conduit,
+                flowRate: connectedBouches[0].flowRate
+            };
+        }
+
+        // Sinon, estimer le débit en fonction de la position dans le réseau
+        // (Cette logique sera améliorée)
+        return conduit;
+    });
+
+    return [...updatedCaissons, ...bouches, ...updatedConduits];
+}
+
+/**
+ * Module pour les calculs de perte de charge
+ */
+
+
+
+// Coefficients de perte de charge singulière pour différents types de raccords
+window.window.SINGULAR_LOSS_COEFFICIENTS = {
+    // Coude à 90°
+    'elbow_90': {
+        'round': 0.25,
+        'rect': 0.30
+    },
+    // Coude à 45°
+    'elbow_45': {
+        'round': 0.15,
+        'rect': 0.18
+    },
+    // Té (dérivation)
+    'tee_branch': {
+        'round': 0.50,
+        'rect': 0.60
+    },
+    // Té (passage direct)
+    'tee_straight': {
+        'round': 0.10,
+        'rect': 0.12
+    },
+    // Réduction
+    'reduction': {
+        'round': 0.10,
+        'rect': 0.15
+    },
+    // Élargissement
+    'expansion': {
+        'round': 0.20,
+        'rect': 0.25
+    },
+    // Entrée
+    'entry': {
+        'round': 0.50,
+        'rect': 0.50
+    },
+    // Sortie
+    'exit': {
+        'round': 1.00,
+        'rect': 1.00
+    },
+    // Grille
+    'grille': {
+        'round': 1.50,
+        'rect': 1.50
+    },
+    // Bouche
+    'bouche': {
+        'round': 1.00,
+        'rect': 1.00
+    }
+};
+
+// Rugosité des différents matériaux (en mètres)
+const MATERIAL_ROUGHNESS = {
+    'acier': 0.00015,      // Acier galvanisé
+    'aluminium': 0.00006,  // Aluminium
+    'flexible': 0.001,     // Conduit flexible
+    'pvc': 0.0000015,     // PVC lisse
+    'beton': 0.003        // Béton
+};
+
+// Coefficient de perte de charge linéaire pour différents matériaux
+// (perte de charge en Pa/m pour un débit de 1 m³/h dans un conduit de 100mm)
+const LINEAR_LOSS_COEFFICIENTS = {
+    'acier': 0.02,
+    'aluminium': 0.015,
+    'flexible': 0.05,
+    'pvc': 0.01,
+    'beton': 0.03
+};
+
+/**
+ * Calcule la perte de charge linéaire avec la formule de Darcy-Weisbach
+ * @param {number} length - Longueur du conduit en mètres
+ * @param {number} diameter - Diamètre en mètres (pour les conduits ronds)
+ * @param {number} width - Largeur en mètres (pour les conduits rectangulaires)
+ * @param {number} height - Hauteur en mètres (pour les conduits rectangulaires)
+ * @param {number} flowRate - Débit en m³/s
+ * @param {number} roughness - Rugosité en mètres
+ * @param {boolean} isRound - Vrai si conduit rond
+ * @returns {number} Perte de charge en Pa
+ */
+export function calculateLinearPressureDrop(
+    length, diameter = 0, width = 0, height = 0, 
+    flowRate, roughness = 0.00015, isRound = true
+) {
+    if (flowRate <= 0 || length <= 0) return 0;
+
+    // Calculer la section
+    let area;
+    let hydraulicDiameter;
+    
+    if (isRound) {
+        const radius = diameter / 2;
+        area = Math.PI * radius * radius;
+        hydraulicDiameter = diameter;
+    } else {
+        area = width * height;
+        // Diamètre hydraulique pour les conduits rectangulaires: Dh = 2 * (w * h) / (w + h)
+        hydraulicDiameter = (2 * width * height) / (width + height);
+    }
+
+    if (area <= 0 || hydraulicDiameter <= 0) return 0;
+
+    // Calculer la vitesse
+    const velocity = flowRate / area;
+    if (velocity <= 0) return 0;
+
+    // Calculer le nombre de Reynolds
+    const kinematicViscosity = 1.5e-5; // Viscosité cinématique de l'air à 20°C (m²/s)
+    const reynoldsNumber = (velocity * hydraulicDiameter) / kinematicViscosity;
+
+    // Calculer le coefficient de friction avec la formule de Colebrook-White
+    const frictionFactor = calculateFrictionFactor(reynoldsNumber, roughness, hydraulicDiameter);
+
+    // Formule de Darcy-Weisbach: ΔP = f * (L / Dh) * (ρ * v² / 2)
+    const pressureDrop = frictionFactor * (length / hydraulicDiameter) * (window.AIR_DENSITY * velocity * velocity / 2);
+
+    return pressureDrop;
+}
+
+/**
+ * Calcule le coefficient de friction avec la formule de Colebrook-White
+ * @param {number} reynoldsNumber - Nombre de Reynolds
+ * @param {number} roughness - Rugosité en mètres
+ * @param {number} diameter - Diamètre hydraulique en mètres
+ * @returns {number} Coefficient de friction
+ */
+function calculateFrictionFactor(reynoldsNumber, roughness, diameter) {
+    if (reynoldsNumber <= 0 || diameter <= 0) return 0.02;
+
+    const relativeRoughness = roughness / diameter;
+
+    // Approximation de Swamee-Jain pour éviter l'itération
+    if (reynoldsNumber < 2000) {
+        // Régime laminaire
+        return 64 / reynoldsNumber;
+    }
+
+    // Régime turbulent - approximation de Swamee-Jain
+    const term1 = 0.25 / Math.pow(Math.log10(relativeRoughness / 3.7 + 5.74 / Math.pow(reynoldsNumber, 0.9)), 2);
+    return term1;
+}
+
+/**
+ * Calcule la perte de charge singulière
+ * @param {number} velocity - Vitesse en m/s
+ * @param {string} fittingType - Type de raccord
+ * @param {boolean} isRound - Vrai si conduit rond
+ * @returns {number} Perte de charge en Pa
+ */
+export function calculateSingularPressureDrop(velocity, fittingType = 'elbow_90', isRound = true) {
+    if (velocity <= 0) return 0;
+
+    const coefficient = window.SINGULAR_LOSS_COEFFICIENTS[fittingType]?.[isRound ? 'round' : 'rect'] || 0.25;
+    
+    // Formule: ΔP = K * (ρ * v² / 2)
+    return coefficient * (window.AIR_DENSITY * velocity * velocity / 2);
+}
+
+/**
+ * Calcule la perte de charge pour une réduction
+ * @param {number} velocityIn - Vitesse en amont en m/s
+ * @param {number} areaIn - Section en amont en m²
+ * @param {number} areaOut - Section en aval en m²
+ * @param {boolean} isRound - Vrai si conduit rond
+ * @returns {number} Perte de charge en Pa
+ */
+export function calculateReductionPressureDrop(velocityIn, areaIn, areaOut, isRound = true) {
+    if (velocityIn <= 0 || areaIn <= 0 || areaOut <= 0) return 0;
+
+    // Calculer la vitesse en aval (conservation du débit)
+    const velocityOut = velocityIn * (areaIn / areaOut);
+
+    // Coefficient de perte de charge pour une réduction
+    const areaRatio = areaOut / areaIn;
+    const coefficient = 0.5 * Math.pow(1 - areaRatio, 2);
+
+    // Formule: ΔP = K * (ρ * v² / 2)
+    return coefficient * (window.AIR_DENSITY * velocityIn * velocityIn / 2);
+}
+
+/**
+ * Calcule la perte de charge pour un élargissement
+ * @param {number} velocityIn - Vitesse en amont en m/s
+ * @param {number} areaIn - Section en amont en m²
+ * @param {number} areaOut - Section en aval en m²
+ * @param {boolean} isRound - Vrai si conduit rond
+ * @returns {number} Perte de charge en Pa
+ */
+export function calculateExpansionPressureDrop(velocityIn, areaIn, areaOut, isRound = true) {
+    if (velocityIn <= 0 || areaIn <= 0 || areaOut <= 0) return 0;
+
+    // Calculer la vitesse en aval
+    const velocityOut = velocityIn * (areaIn / areaOut);
+
+    // Coefficient de perte de charge pour un élargissement
+    const areaRatio = areaOut / areaIn;
+    const coefficient = Math.pow(1 - areaIn / areaOut, 2);
+
+    // Formule: ΔP = K * (ρ * v² / 2)
+    return coefficient * (window.AIR_DENSITY * velocityIn * velocityIn / 2);
+}
+
+/**
+ * Calcule la perte de charge totale pour un conduit
+ * @param {Object} conduit - Le conduit
+ * @param {Array} elements - Tous les éléments du réseau
+ * @returns {number} Perte de charge totale en Pa
+ */
+window.calculateTotalPressureDrop = function(conduit, elements) {
+    if (!conduit || conduit.flowRate <= 0) return 0;
+
+    let totalPressureDrop = 0;
+
+    // 1. Perte de charge linéaire
+    const lengthM = conduit.length / 1000; // Convertir de mm à m
+    const diameterM = conduit.diameter / 1000; // Convertir de mm à m
+    const widthM = conduit.width / 1000;
+    const heightM = conduit.height / 1000;
+    const flowRateM3s = conduit.flowRate / 3600; // Convertir de m³/h à m³/s
+    const roughness = MATERIAL_ROUGHNESS[conduit.material] || 0.00015;
+
+    const linearDrop = calculateLinearPressureDrop(
+        lengthM, diameterM, widthM, heightM,
+        flowRateM3s, roughness, conduit.isRound
+    );
+    totalPressureDrop += linearDrop;
+
+    // 2. Pertes de charge singulières (coudes, etc.)
+    // Détecter les changements de direction
+    const directionChanges = detectDirectionChanges(conduit, elements);
+    
+    for (const change of directionChanges) {
+        const singularDrop = calculateSingularPressureDrop(
+            conduit.velocity,
+            change.type,
+            conduit.isRound
+        );
+        totalPressureDrop += singularDrop;
+    }
+
+    // 3. Pertes de charge pour les réductions/élargissements
+    // (À implémenter avec la détection des changements de diamètre)
+
+    return totalPressureDrop;
+}
+
+/**
+ * Détecte les changements de direction dans un conduit
+ * @param {Object} conduit - Le conduit
+ * @param {Array} elements - Tous les éléments du réseau
+ * @returns {Array} Tableau des changements de direction
+ */
+function detectDirectionChanges(conduit, elements) {
+    const changes = [];
+
+    // Vérifier si le conduit a des points de contrôle (courbe)
+    if (conduit.controlPoints && conduit.controlPoints.length > 0) {
+        // Estimer le nombre de coudes en fonction des points de contrôle
+        const segmentCount = conduit.controlPoints.length + 1;
+        for (let i = 0; i < segmentCount; i++) {
+            changes.push({ type: 'elbow_45' }); // Approximation
+        }
+    }
+
+    // Vérifier les connexions avec d'autres éléments
+    // (À implémenter)
+
+    return changes;
+}
+
+/**
+ * Calcule la pression totale nécessaire pour un réseau
+ * @param {Array} conduits - Tableau des conduits
+ * @param {Array} bouches - Tableau des bouches
+ * @param {Array} caissons - Tableau des caissons
+ * @returns {number} Pression totale en Pa
+ */
+export function calculateTotalNetworkPressure(conduits, bouches, caissons) {
+    if (caissons.length === 0) return 0;
+
+    // Calculer la perte de charge pour chaque conduit
+    const pressureDrops = conduits.map(conduit => 
+        calculateTotalPressureDrop(conduit, [...bouches, ...caissons, ...conduits])
+    );
+
+    // La pression totale est la somme des pertes de charge du chemin le plus long
+    // (Implémentation simplifiée - à améliorer avec un algorithme de chemin critique)
+    return Math.max(...pressureDrops, 0);
+}
+
+/**
+ * Dimensionne un caisson en fonction du débit total
+ * @param {number} totalFlow - Débit total en m³/h
+ * @param {string} type - Type de caisson ('centrifuge', 'axial')
+ * @returns {Object} Dimensions du caisson
+ */
+export function sizeCaisson(totalFlow, type = 'centrifuge') {
+    // Dimensions approximatives basées sur le débit
+    // (Ces valeurs sont indicatives et doivent être ajustées selon les normes constructeur)
+    
+    const dimensions = {
+        width: 0,
+        height: 0,
+        depth: 0,
+        power: 0 // Puissance en kW
+    };
+
+    if (totalFlow <= 1000) {
+        // Petit caisson
+        dimensions.width = 500;
+        dimensions.height = 400;
+        dimensions.depth = 300;
+        dimensions.power = 0.5;
+    } else if (totalFlow <= 5000) {
+        // Caisson moyen
+        dimensions.width = 800;
+        dimensions.height = 600;
+        dimensions.depth = 400;
+        dimensions.power = 2.2;
+    } else if (totalFlow <= 10000) {
+        // Grand caisson
+        dimensions.width = 1200;
+        dimensions.height = 800;
+        dimensions.depth = 600;
+        dimensions.power = 5.5;
+    } else {
+        // Très grand caisson
+        dimensions.width = 1500;
+        dimensions.height = 1000;
+        dimensions.depth = 800;
+        dimensions.power = 11;
+    }
+
+    // Ajuster selon le type
+    if (type === 'axial') {
+        dimensions.depth = dimensions.depth * 0.8;
+    }
+
+    return dimensions;
+}
+
+/**
+ * Calcule la perte de charge pour un réseau complet
+ * @param {Array} elements - Tous les éléments du réseau
+ * @returns {Object} Objet avec les résultats de calcul
+ */
+window.calculateNetworkPressureLoss = function(elements) {
+    const conduits = elements.filter(el => el.type === 'conduit');
+    const bouches = elements.filter(el => el.type === 'bouche');
+    const caissons = elements.filter(el => el.type === 'caisson');
+
+    // Calculer la perte de charge pour chaque conduit
+    const results = conduits.map(conduit => {
+        const pressureDrop = calculateTotalPressureDrop(conduit, elements);
+        return {
+            id: conduit.id,
+            pressureDrop: pressureDrop,
+            velocity: conduit.velocity || 0
+        };
+    });
+
+    // Calculer la pression totale nécessaire
+    const totalPressure = calculateTotalNetworkPressure(conduits, bouches, caissons);
+
+    // Dimensionner le caisson
+    const totalFlow = bouches.reduce((sum, bouche) => sum + (bouche.flowRate || 0), 0);
+    const caissonSize = sizeCaisson(totalFlow);
+
+    return {
+        conduits: results,
+        totalPressure: totalPressure,
+        caissonSize: caissonSize,
+        totalFlow: totalFlow
+    };
+}
+
+/**
+ * Obtient le coefficient de rugosité pour un matériau
+ * @param {string} material - Matériau
+ * @returns {number} Rugosité en mètres
+ */
+export function getMaterialRoughness(material) {
+    return MATERIAL_ROUGHNESS[material] || 0.00015;
+}
+
+/**
+ * Obtient le coefficient de perte de charge linéaire pour un matériau
+ * @param {string} material - Matériau
+ * @returns {number} Coefficient de perte de charge
+ */
+export function getLinearLossCoefficient(material) {
+    return LINEAR_LOSS_COEFFICIENTS[material] || 0.02;
+}
+
+/**
+ * Module pour la validation du réseau de ventilation
+ */
+
+/**
+ * Vérifie si le réseau contient des boucles
+ * @param {Array} elements - Tous les éléments du réseau
+ * @returns {Object} Objet avec hasLoop (boolean) et loops (Array)
+ */
+window.detectLoops = function(elements) {
+    const conduits = elements.filter(el => el.type === 'conduit');
+    const nodes = elements.filter(el => el.type === 'caisson' || el.type === 'bouche');
+
+    // Créer un graphe de connexion
+    const graph = window.buildConnectionGraph(elements);
+
+    // Détecter les boucles avec un algorithme de parcours en profondeur
+    const visited = new Set();
+    const recursionStack = new Set();
+    const loops = [];
+
+    function hasCycle(nodeId) {
+        if (!graph.has(nodeId)) return false;
+
+        visited.add(nodeId);
+        recursionStack.add(nodeId);
+
+        for (const neighborId of graph.get(nodeId)) {
+            if (!visited.has(neighborId)) {
+                if (hasCycle(neighborId)) {
+                    return true;
+                }
+            } else if (recursionStack.has(neighborId)) {
+                // Boucle détectée
+                loops.push([...recursionStack].filter(id => id !== neighborId || id === nodeId));
+                return true;
+            }
+        }
+
+        recursionStack.delete(nodeId);
+        return false;
+    }
+
+    // Parcourir tous les nœuds
+    for (const node of nodes) {
+        if (!visited.has(node.id)) {
+            hasCycle(node.id);
+        }
+    }
+
+    return {
+        hasLoop: loops.length > 0,
+        loops: loops
+    };
+}
+
+/**
+ * Construit un graphe de connexion à partir des éléments
+ * @param {Array} elements - Tous les éléments
+ * @returns {Map} Graphe de connexion (nodeId -> Set of connected nodeIds)
+ */
+function window.buildConnectionGraph(elements) {
+    const graph = new Map();
+
+    // Initialiser tous les nœuds
+    elements.forEach(el => {
+        graph.set(el.id, new Set());
+    });
+
+    // Ajouter les connexions
+    const conduits = elements.filter(el => el.type === 'conduit');
+    for (const conduit of conduits) {
+        if (conduit.startElementId && conduit.endElementId) {
+            // Ajouter la connexion dans les deux sens
+            if (graph.has(conduit.startElementId)) {
+                graph.get(conduit.startElementId).add(conduit.endElementId);
+            }
+            if (graph.has(conduit.endElementId)) {
+                graph.get(conduit.endElementId).add(conduit.startElementId);
+            }
+        }
+    }
+
+    return graph;
+}
+
+/**
+ * Vérifie si toutes les bouches sont connectées au réseau
+ * @param {Array} elements - Tous les éléments du réseau
+ * @returns {Object} Objet avec allConnected (boolean) et disconnected (Array)
+ */
+export function checkBouchesConnected(elements) {
+    const bouches = elements.filter(el => el.type === 'bouche');
+    const caissons = elements.filter(el => el.type === 'caisson');
+    const conduits = elements.filter(el => el.type === 'conduit');
+
+    if (caissons.length === 0) {
+        return {
+            allConnected: false,
+            disconnected: bouches.map(b => b.id),
+            message: 'Aucun caisson trouvé. Toutes les bouches sont déconnectées.'
+        };
+    }
+
+    // Construire le graphe de connexion
+    const graph = window.buildConnectionGraph(elements);
+
+    // Trouver toutes les bouches connectées au caisson
+    const connectedBouches = new Set();
+    const visited = new Set();
+
+    // Parcourir à partir de chaque caisson
+    for (const caisson of caissons) {
+        if (!visited.has(caisson.id)) {
+            traverseFromNode(caisson.id, graph, visited, connectedBouches);
+        }
+    }
+
+    // Trouver les bouches non connectées
+    const disconnected = bouches.filter(bouche => !connectedBouches.has(bouche.id));
+
+    return {
+        allConnected: disconnected.length === 0,
+        disconnected: disconnected.map(b => b.id),
+        message: disconnected.length === 0 
+            ? 'Toutes les bouches sont connectées au réseau.'
+            : `${disconnected.length} bouche(s) non connectée(s) : ${disconnected.map(b => b.id).join(', ')}`
+    };
+}
+
+/**
+ * Parcourt le graphe à partir d'un nœud
+ * @param {string} nodeId - ID du nœud de départ
+ * @param {Map} graph - Graphe de connexion
+ * @param {Set} visited - Nœuds déjà visités
+ * @param {Set} connectedBouches - Bouches connectées trouvées
+ */
+function traverseFromNode(nodeId, graph, visited, connectedBouches) {
+    if (!graph.has(nodeId) || visited.has(nodeId)) return;
+
+    visited.add(nodeId);
+
+    // Si c'est une bouche, l'ajouter aux bouches connectées
+    const node = findElementById(nodeId, [...graph.keys()]);
+    if (node && node.type === 'bouche') {
+        connectedBouches.add(nodeId);
+    }
+
+    // Parcourir les voisins
+    for (const neighborId of graph.get(nodeId)) {
+        if (!visited.has(neighborId)) {
+            traverseFromNode(neighborId, graph, visited, connectedBouches);
+        }
+    }
+}
+
+/**
+ * Trouve un élément par son ID
+ * @param {string} id - ID de l'élément
+ * @param {Array} elements - Tableau des éléments
+ * @returns {Object|null} L'élément trouvé ou null
+ */
+function findElementById(id, elements) {
+    return elements.find(el => el.id === id) || null;
+}
+
+/**
+ * Vérifie si le réseau a un seul caisson (recommandé)
+ * @param {Array} elements - Tous les éléments
+ * @returns {Object} Objet avec valid (boolean) et message (string)
+ */
+export function checkSingleCaisson(elements) {
+    const caissons = elements.filter(el => el.type === 'caisson');
+
+    if (caissons.length === 0) {
+        return {
+            valid: false,
+            message: 'Aucun caisson trouvé. Ajoutez au moins un caisson pour démarrer le réseau.'
+        };
+    }
+
+    if (caissons.length > 1) {
+        return {
+            valid: false,
+            message: `${caissons.length} caissons trouvés. Il est recommandé d'avoir un seul caisson principal.`
+        };
+    }
+
+    return {
+        valid: true,
+        message: 'Configuration de caisson valide.'
+    };
+}
+
+/**
+ * Vérifie si les débits des bouches sont valides
+ * @param {Array} bouches - Tableau des bouches
+ * @returns {Object} Objet avec valid (boolean), errors (Array) et warnings (Array)
+ */
+export function validateBouchesFlowRates(bouches) {
+    const errors = [];
+    const warnings = [];
+
+    for (const bouche of bouches) {
+        if (bouche.flowRate === undefined || bouche.flowRate === null) {
+            errors.push({
+                id: bouche.id,
+                message: `Débit non défini pour la bouche ${bouche.id}`
+            });
+        } else if (bouche.flowRate <= 0) {
+            errors.push({
+                id: bouche.id,
+                message: `Débit invalide (${bouche.flowRate} m³/h) pour la bouche ${bouche.id}. Doit être > 0.`
+            });
+        } else if (bouche.flowRate > 10000) {
+            warnings.push({
+                id: bouche.id,
+                message: `Débit élevé (${bouche.flowRate} m³/h) pour la bouche ${bouche.id}. Vérifiez la valeur.`
+            });
+        }
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors: errors,
+        warnings: warnings
+    };
+}
+
+/**
+ * Vérifie si le réseau a des conduits non connectés
+ * @param {Array} elements - Tous les éléments
+ * @returns {Object} Objet avec valid (boolean) et disconnected (Array)
+ */
+export function checkConduitsConnected(elements) {
+    const conduits = elements.filter(el => el.type === 'conduit');
+    const disconnected = [];
+
+    for (const conduit of conduits) {
+        if (!conduit.startElementId || !conduit.endElementId) {
+            disconnected.push({
+                id: conduit.id,
+                message: `Conduit ${conduit.id} non connecté à un ou deux éléments.`
+            });
+        } else {
+            // Vérifier si les éléments de connexion existent
+            const startElement = findElementById(conduit.startElementId, elements);
+            const endElement = findElementById(conduit.endElementId, elements);
+
+            if (!startElement || !endElement) {
+                disconnected.push({
+                    id: conduit.id,
+                    message: `Conduit ${conduit.id} connecté à des éléments inexistants.`
+                });
+            }
+        }
+    }
+
+    return {
+        valid: disconnected.length === 0,
+        disconnected: disconnected
+    };
+}
+
+/**
+ * Vérifie si le réseau a des conduits qui se croisent
+ * @param {Array} conduits - Tableau des conduits
+ * @returns {Object} Objet avec hasCrossings (boolean) et crossings (Array)
+ */
+export function detectConduitCrossings(conduits) {
+    const crossings = [];
+
+    for (let i = 0; i < conduits.length; i++) {
+        for (let j = i + 1; j < conduits.length; j++) {
+            const conduit1 = conduits[i];
+            const conduit2 = conduits[j];
+
+            // Vérifier si les conduits se croisent
+            if (doConduitsCross(conduit1, conduit2)) {
+                crossings.push({
+                    conduit1: conduit1.id,
+                    conduit2: conduit2.id
+                });
+            }
+        }
+    }
+
+    return {
+        hasCrossings: crossings.length > 0,
+        crossings: crossings
+    };
+}
+
+/**
+ * Vérifie si deux conduits se croisent
+ * @param {Object} conduit1 - Premier conduit
+ * @param {Object} conduit2 - Deuxième conduit
+ * @returns {boolean} Vrai si les conduits se croisent
+ */
+function doConduitsCross(conduit1, conduit2) {
+    // Implémentation simplifiée de la détection de croisement de segments
+    const p1 = { x: conduit1.start.x, y: conduit1.start.y };
+    const p2 = { x: conduit1.end.x, y: conduit1.end.y };
+    const p3 = { x: conduit2.start.x, y: conduit2.start.y };
+    const p4 = { x: conduit2.end.x, y: conduit2.end.y };
+
+    // Calculer les orientations
+    const o1 = orientation(p1, p2, p3);
+    const o2 = orientation(p1, p2, p4);
+    const o3 = orientation(p3, p4, p1);
+    const o4 = orientation(p3, p4, p2);
+
+    // Cas général : les segments se croisent si les orientations sont différentes
+    if (o1 !== o2 && o3 !== o4) {
+        return true;
+    }
+
+    // Cas particuliers : colinéaires et chevauchants
+    // (Non implémenté pour simplifier)
+
+    return false;
+}
+
+/**
+ * Calcule l'orientation de trois points
+ * @param {Object} p - Point 1
+ * @param {Object} q - Point 2
+ * @param {Object} r - Point 3
+ * @returns {number} 0 = colinéaire, 1 = sens horaire, 2 = sens anti-horaire
+ */
+function orientation(p, q, r) {
+    const val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+    
+    if (val === 0) return 0; // colinéaire
+    return val > 0 ? 1 : 2; // sens horaire ou anti-horaire
+}
+
+/**
+ * Vérifie si le réseau dépasse la limite recommandée de nœuds
+ * @param {Array} elements - Tous les éléments
+ * @param {number} maxNodes - Nombre maximum de nœuds (défaut: 100)
+ * @returns {Object} Objet avec valid (boolean) et message (string)
+ */
+export function checkNodeLimit(elements, maxNodes = 100) {
+    const bouches = elements.filter(el => el.type === 'bouche');
+
+    if (bouches.length > maxNodes) {
+        return {
+            valid: false,
+            message: `Trop de bouches (${bouches.length}). Limite recommandée : ${maxNodes}.`
+        };
+    }
+
+    return {
+        valid: true,
+        message: `Nombre de bouches acceptable (${bouches.length}/${maxNodes}).`
+    };
+}
+
+/**
+ * Effectue une validation complète du réseau
+ * @param {Array} elements - Tous les éléments du réseau
+ * @returns {Object} Résultats de la validation
+ */
+window.validateNetwork = function(elements) {
+    const results = {
+        isValid: true,
+        errors: [],
+        warnings: [],
+        info: []
+    };
+
+    // 1. Vérifier le nombre de caissons
+    const caissonCheck = checkSingleCaisson(elements);
+    if (!caissonCheck.valid) {
+        results.isValid = false;
+        results.errors.push(caissonCheck.message);
+    } else {
+        results.info.push(caissonCheck.message);
+    }
+
+    // 2. Vérifier les débits des bouches
+    const bouches = elements.filter(el => el.type === 'bouche');
+    const flowValidation = validateBouchesFlowRates(bouches);
+    if (!flowValidation.valid) {
+        results.isValid = false;
+        flowValidation.errors.forEach(error => {
+            results.errors.push(error.message);
+        });
+    }
+    flowValidation.warnings.forEach(warning => {
+        results.warnings.push(warning.message);
+    });
+
+    // 3. Vérifier les connexions des bouches
+    const bouchesConnected = checkBouchesConnected(elements);
+    if (!bouchesConnected.allConnected) {
+        results.isValid = false;
+        results.errors.push(bouchesConnected.message);
+    } else {
+        results.info.push(bouchesConnected.message);
+    }
+
+    // 4. Vérifier les connexions des conduits
+    const conduitsConnected = checkConduitsConnected(elements);
+    if (!conduitsConnected.valid) {
+        results.isValid = false;
+        conduitsConnected.disconnected.forEach(dc => {
+            results.errors.push(dc.message);
+        });
+    }
+
+    // 5. Détecter les boucles
+    const loopDetection = window.detectLoops(elements);
+    if (loopDetection.hasLoop) {
+        results.warnings.push(`Boucle(s) détectée(s) dans le réseau : ${loopDetection.loops.length}`);
+    } else {
+        results.info.push('Aucune boucle détectée dans le réseau.');
+    }
+
+    // 6. Détecter les croisements de conduits
+    const conduits = elements.filter(el => el.type === 'conduit');
+    const crossingDetection = detectConduitCrossings(conduits);
+    if (crossingDetection.hasCrossings) {
+        results.warnings.push(`Croisement(s) de conduits détecté(s) : ${crossingDetection.crossings.length}`);
+    } else {
+        results.info.push('Aucun croisement de conduits détecté.');
+    }
+
+    // 7. Vérifier la limite de nœuds
+    const nodeLimit = checkNodeLimit(elements);
+    if (!nodeLimit.valid) {
+        results.warnings.push(nodeLimit.message);
+    } else {
+        results.info.push(nodeLimit.message);
+    }
+
+    return results;
+}
+
+/**
+ * Module pour l'export PDF du réseau de ventilation
+ */
+
+ (loaded via CDN)
+
+/**
+ * Génère un document PDF avec le réseau de ventilation
+ * @param {Array} elements - Tous les éléments du réseau
+ * @param {Object} results - Résultats des calculs
+ * @param {string} flowDirection - Sens de l'air ('supply' ou 'extract')
+ * @returns {Promise<Uint8Array>} PDF généré
+ */
+window.generatePDF = async function(elements, results = {}, flowDirection = 'supply') {
+    // Créer un nouveau document PDF
+    const pdfDoc = await window.PDFDocument.create();
+    
+    // Ajouter une page
+    const page = pdfDoc.addPage([800, 1100]);
+    
+    // Dessiner le contenu
+    await drawPDFContent(page, elements, results, flowDirection);
+    
+    // Sauvegarder le PDF
+    const pdfBytes = await pdfDoc.save();
+    
+    return pdfBytes;
+}
+
+/**
+ * Dessine le contenu du PDF
+ * @param {Object} page - Page PDF
+ * @param {Array} elements - Tous les éléments
+ * @param {Object} results - Résultats des calculs
+ * @param {string} flowDirection - Sens de l'air
+ */
+async function drawPDFContent(page, elements, results, flowDirection) {
+    const { width, height } = page.getSize();
+    const margin = 50;
+    const contentWidth = width - 2 * margin;
+    const contentHeight = height - 2 * margin;
+
+    // Couleurs
+    const black = window.rgb(0, 0, 0);
+    const blue = window.rgb(0, 0, 1);
+    const red = window.rgb(1, 0, 0);
+    const green = window.rgb(0, 0.5, 0);
+    const gray = window.rgb(0.5, 0.5, 0.5);
+
+    // Titre
+    page.drawText('Rapport de Ventilation', {
+        x: width / 2,
+        y: height - 50,
+        size: 24,
+        color: black,
+        font: await pdfDoc.embedFont('Helvetica-Bold'),
+        textAlign: 'center'
+    });
+
+    // Sous-titre
+    page.drawText(`Sens de l'air: ${flowDirection === 'supply' ? 'Soufflage' : 'Aspiration'}`, {
+        x: width / 2,
+        y: height - 80,
+        size: 14,
+        color: black,
+        textAlign: 'center'
+    });
+
+    // Date
+    const date = new Date().toLocaleDateString('fr-FR');
+    page.drawText(`Date: ${date}`, {
+        x: width / 2,
+        y: height - 100,
+        size: 12,
+        color: gray,
+        textAlign: 'center'
+    });
+
+    // Séparateur
+    page.drawLine({
+        start: { x: margin, y: height - 120 },
+        end: { x: width - margin, y: height - 120 },
+        thickness: 1,
+        color: gray
+    });
+
+    // Dessiner le schéma du réseau
+    let yPosition = height - 140;
+    yPosition = await drawNetworkDiagram(page, elements, margin, yPosition, contentWidth, flowDirection);
+
+    // Ajouter une nouvelle page si nécessaire
+    if (yPosition < 100) {
+        const newPage = pdfDoc.addPage([800, 1100]);
+        yPosition = 1000;
+        page = newPage;
+    }
+
+    // Tableau des éléments
+    yPosition = await drawElementsTable(page, elements, margin, yPosition, contentWidth);
+
+    // Résultats des calculs
+    if (results.totalFlow || results.totalPressure) {
+        yPosition = await drawCalculationResults(page, results, margin, yPosition, contentWidth);
+    }
+
+    // Validation
+    yPosition = await drawValidationSummary(page, elements, margin, yPosition, contentWidth);
+
+    // Pied de page
+    page.drawText('Généré par Design Ventilation', {
+        x: width / 2,
+        y: 30,
+        size: 10,
+        color: gray,
+        textAlign: 'center'
+    });
+}
+
+/**
+ * Dessine le schéma du réseau
+ * @param {Object} page - Page PDF
+ * @param {Array} elements - Tous les éléments
+ * @param {number} x - Position X
+ * @param {number} y - Position Y
+ * @param {number} width - Largeur disponible
+ * @param {string} flowDirection - Sens de l'air
+ * @returns {Promise<number>} Nouvelle position Y
+ */
+async function drawNetworkDiagram(page, elements, x, y, width, flowDirection) {
+    // Trouver les dimensions du réseau
+    const bounds = calculateNetworkBounds(elements);
+    const networkWidth = bounds.maxX - bounds.minX;
+    const networkHeight = bounds.maxY - bounds.minY;
+
+    // Échelle pour adapter au PDF
+    const scale = Math.min(width / networkWidth, 200 / networkHeight);
+    const centerX = x + width / 2;
+    const centerY = y - 100;
+
+    // Dessiner le titre
+    page.drawText('Schéma du réseau', {
+        x: centerX,
+        y: y,
+        size: 16,
+        color: window.rgb(0, 0, 0),
+        textAlign: 'center'
+    });
+
+    y -= 30;
+
+    // Dessiner les éléments
+    for (const element of elements) {
+        if (element.type === 'caisson') {
+            drawCaisson(page, element, centerX, centerY, scale, flowDirection);
+        } else if (element.type === 'bouche') {
+            drawBouche(page, element, centerX, centerY, scale, flowDirection);
+        } else if (element.type === 'conduit') {
+            drawConduit(page, element, centerX, centerY, scale, flowDirection);
+        }
+    }
+
+    // Légende
+    const legendY = y - networkHeight * scale - 40;
+    page.drawText('Légende:', {
+        x: x,
+        y: legendY,
+        size: 12,
+        color: window.rgb(0, 0, 0)
+    });
+
+    page.drawText('C - Caisson', {
+        x: x + 50,
+        y: legendY,
+        size: 10,
+        color: window.rgb(0, 0, 1)
+    });
+
+    page.drawText('B - Bouche', {
+        x: x + 150,
+        y: legendY,
+        size: 10,
+        color: window.rgb(0, 0.5, 0)
+    });
+
+    page.drawText('S - Conduit', {
+        x: x + 250,
+        y: legendY,
+        size: 10,
+        color: window.rgb(0, 0, 0)
+    });
+
+    return legendY - 30;
+}
+
+/**
+ * Calcule les limites du réseau
+ * @param {Array} elements - Tous les éléments
+ * @returns {Object} Limites avec minX, maxX, minY, maxY
+ */
+function calculateNetworkBounds(elements) {
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+    for (const element of elements) {
+        if (element.type === 'caisson' || element.type === 'bouche') {
+            minX = Math.min(minX, element.x - 30);
+            maxX = Math.max(maxX, element.x + 30);
+            minY = Math.min(minY, element.y - 30);
+            maxY = Math.max(maxY, element.y + 30);
+        } else if (element.type === 'conduit') {
+            minX = Math.min(minX, element.start.x, element.end.x);
+            maxX = Math.max(maxX, element.start.x, element.end.x);
+            minY = Math.min(minY, element.start.y, element.end.y);
+            maxY = Math.max(maxY, element.start.y, element.end.y);
+        }
+    }
+
+    // Ajouter une marge
+    const margin = 20;
+    return {
+        minX: minX - margin,
+        maxX: maxX + margin,
+        minY: minY - margin,
+        maxY: maxY + margin
+    };
+}
+
+/**
+ * Dessine un caisson sur le PDF
+ * @param {Object} page - Page PDF
+ * @param {Object} caisson - Caisson à dessiner
+ * @param {number} centerX - Centre X
+ * @param {number} centerY - Centre Y
+ * @param {number} scale - Échelle
+ * @param {string} flowDirection - Sens de l'air
+ */
+function drawCaisson(page, caisson, centerX, centerY, scale, flowDirection) {
+    const x = centerX + (caisson.x - calculateNetworkBounds([caisson]).minX - 20) * scale;
+    const y = centerY - (caisson.y - calculateNetworkBounds([caisson]).minY - 20) * scale;
+    const size = 20;
+
+    // Dessiner le rectangle
+    page.drawRectangle({
+        x: x - size / 2,
+        y: y - size / 2,
+        width: size,
+        height: size,
+        borderColor: window.rgb(0, 0, 1),
+        borderWidth: 1,
+        color: window.rgb(0.8, 0.8, 1)
+    });
+
+    // Texte
+    page.drawText(caisson.id, {
+        x: x,
+        y: y - size / 2 - 5,
+        size: 8,
+        color: window.rgb(0, 0, 0),
+        textAlign: 'center'
+    });
+
+    // Débit
+    if (caisson.flowRate) {
+        page.drawText(`${caisson.flowRate} m³/h`, {
+            x: x,
+            y: y + size / 2 + 10,
+            size: 7,
+            color: window.rgb(0, 0, 0),
+            textAlign: 'center'
+        });
+    }
+}
+
+/**
+ * Dessine une bouche sur le PDF
+ * @param {Object} page - Page PDF
+ * @param {Object} bouche - Bouche à dessiner
+ * @param {number} centerX - Centre X
+ * @param {number} centerY - Centre Y
+ * @param {number} scale - Échelle
+ * @param {string} flowDirection - Sens de l'air
+ */
+function drawBouche(page, bouche, centerX, centerY, scale, flowDirection) {
+    const bounds = calculateNetworkBounds([bouche]);
+    const x = centerX + (bouche.x - bounds.minX - 20) * scale;
+    const y = centerY - (bouche.y - bounds.minY - 20) * scale;
+    const size = 15;
+
+    // Dessiner le cercle ou carré
+    if (bouche.shape === 'round') {
+        page.drawCircle({
+            x: x,
+            y: y,
+            size: size,
+            borderColor: window.rgb(0, 0.5, 0),
+            borderWidth: 1,
+            color: window.rgb(0.8, 1, 0.8)
+        });
+    } else {
+        page.drawRectangle({
+            x: x - size / 2,
+            y: y - size / 2,
+            width: size,
+            height: size,
+            borderColor: window.rgb(0, 0.5, 0),
+            borderWidth: 1,
+            color: window.rgb(0.8, 1, 0.8)
+        });
+    }
+
+    // Texte
+    page.drawText(bouche.id, {
+        x: x,
+        y: y - size / 2 - 5,
+        size: 8,
+        color: window.rgb(0, 0, 0),
+        textAlign: 'center'
+    });
+
+    // Débit
+    if (bouche.flowRate) {
+        page.drawText(`${bouche.flowRate} m³/h`, {
+            x: x,
+            y: y + size / 2 + 10,
+            size: 7,
+            color: window.rgb(0, 0, 0),
+            textAlign: 'center'
+        });
+    }
+}
+
+/**
+ * Dessine un conduit sur le PDF
+ * @param {Object} page - Page PDF
+ * @param {Object} conduit - Conduit à dessiner
+ * @param {number} centerX - Centre X
+ * @param {number} centerY - Centre Y
+ * @param {number} scale - Échelle
+ * @param {string} flowDirection - Sens de l'air
+ */
+function drawConduit(page, conduit, centerX, centerY, scale, flowDirection) {
+    const bounds = calculateNetworkBounds([conduit]);
+    const startX = centerX + (conduit.start.x - bounds.minX - 20) * scale;
+    const startY = centerY - (conduit.start.y - bounds.minY - 20) * scale;
+    const endX = centerX + (conduit.end.x - bounds.minX - 20) * scale;
+    const endY = centerY - (conduit.end.y - bounds.minY - 20) * scale;
+
+    // Couleur en fonction du sens de l'air
+    const color = flowDirection === 'supply' ? window.rgb(0, 0, 1) : window.rgb(1, 0, 0);
+
+    // Dessiner la ligne
+    page.drawLine({
+        start: { x: startX, y: startY },
+        end: { x: endX, y: endY },
+        thickness: 2,
+        color: color
+    });
+
+    // Texte au milieu
+    const midX = (startX + endX) / 2;
+    const midY = (startY + endY) / 2;
+    
+    page.drawText(conduit.id, {
+        x: midX,
+        y: midY - 5,
+        size: 8,
+        color: window.rgb(0, 0, 0),
+        textAlign: 'center'
+    });
+
+    // Dimensions
+    if (conduit.flowRate) {
+        const dimText = conduit.isRound 
+            ? `Ø${conduit.diameter}mm`
+            : `${conduit.width}×${conduit.height}mm`;
+        
+        page.drawText(`${conduit.flowRate} m³/h, ${dimText}`, {
+            x: midX,
+            y: midY + 10,
+            size: 7,
+            color: window.rgb(0, 0, 0),
+            textAlign: 'center'
+        });
+    }
+}
+
+/**
+ * Dessine le tableau des éléments
+ * @param {Object} page - Page PDF
+ * @param {Array} elements - Tous les éléments
+ * @param {number} x - Position X
+ * @param {number} y - Position Y
+ * @param {number} width - Largeur disponible
+ * @returns {Promise<number>} Nouvelle position Y
+ */
+async function drawElementsTable(page, elements, x, y, width) {
+    page.drawText('Liste des éléments', {
+        x: x,
+        y: y,
+        size: 16,
+        color: window.rgb(0, 0, 0)
+    });
+
+    y -= 25;
+
+    // En-têtes du tableau
+    const headers = ['ID', 'Type', 'Débit (m³/h)', 'Dimensions', 'Matériau'];
+    const colWidths = [60, 80, 80, 100, 80];
+
+    // Dessiner les en-têtes
+    let currentX = x;
+    for (let i = 0; i < headers.length; i++) {
+        page.drawText(headers[i], {
+            x: currentX + colWidths[i] / 2,
+            y: y,
+            size: 10,
+            color: window.rgb(1, 1, 1),
+            textAlign: 'center'
+        });
+        
+        // Fond gris pour les en-têtes
+        page.drawRectangle({
+            x: currentX,
+            y: y - 5,
+            width: colWidths[i],
+            height: 15,
+            color: window.rgb(0.7, 0.7, 0.7)
+        });
+        
+        currentX += colWidths[i];
+    }
+
+    y -= 20;
+
+    // Dessiner les lignes du tableau
+    const caissons = elements.filter(el => el.type === 'caisson');
+    const bouches = elements.filter(el => el.type === 'bouche');
+    const conduits = elements.filter(el => el.type === 'conduit');
+
+    // Dessiner les caissons
+    for (const caisson of caissons) {
+        currentX = x;
+        
+        page.drawText(caisson.id, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[0];
+
+        page.drawText('Caisson', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[1];
+
+        page.drawText(caisson.flowRate ? `${caisson.flowRate}` : '-', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[2];
+
+        page.drawText(`${caisson.width}×${caisson.height}mm`, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[3];
+
+        page.drawText(caisson.material, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+
+        y -= 15;
+    }
+
+    // Dessiner les bouches
+    for (const bouche of bouches) {
+        currentX = x;
+        
+        page.drawText(bouche.id, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[0];
+
+        page.drawText('Bouche', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[1];
+
+        page.drawText(bouche.flowRate ? `${bouche.flowRate}` : '-', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[2];
+
+        page.drawText(bouche.shape === 'round' ? `Ø${bouche.size}mm` : `${bouche.size}×${bouche.size}mm`, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[3];
+
+        page.drawText('-', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+
+        y -= 15;
+    }
+
+    // Dessiner les conduits
+    for (const conduit of conduits) {
+        currentX = x;
+        
+        page.drawText(conduit.id, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[0];
+
+        page.drawText('Conduit', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[1];
+
+        page.drawText(conduit.flowRate ? `${conduit.flowRate}` : '-', {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[2];
+
+        const dimText = conduit.isRound 
+            ? `Ø${conduit.diameter}mm`
+            : `${conduit.width}×${conduit.height}mm`;
+        page.drawText(dimText, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+        currentX += colWidths[3];
+
+        page.drawText(conduit.material, {
+            x: currentX + 10,
+            y: y,
+            size: 9,
+            color: window.rgb(0, 0, 0)
+        });
+
+        y -= 15;
+    }
+
+    return y - 20;
+}
+
+/**
+ * Dessine les résultats des calculs
+ * @param {Object} page - Page PDF
+ * @param {Object} results - Résultats des calculs
+ * @param {number} x - Position X
+ * @param {number} y - Position Y
+ * @param {number} width - Largeur disponible
+ * @returns {Promise<number>} Nouvelle position Y
+ */
+async function drawCalculationResults(page, results, x, y, width) {
+    page.drawText('Résultats des calculs', {
+        x: x,
+        y: y,
+        size: 16,
+        color: window.rgb(0, 0, 0)
+    });
+
+    y -= 25;
+
+    // Débit total
+    if (results.totalFlow) {
+        page.drawText(`Débit total: ${results.totalFlow} m³/h`, {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 20;
+    }
+
+    // Pression totale
+    if (results.totalPressure) {
+        page.drawText(`Pression totale nécessaire: ${results.totalPressure.toFixed(2)} Pa`, {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 20;
+    }
+
+    // Dimension du caisson
+    if (results.caissonSize) {
+        page.drawText('Dimensionnement du caisson:', {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 20;
+
+        page.drawText(`  Largeur: ${results.caissonSize.width} mm`, {
+            x: x + 20,
+            y: y,
+            size: 10,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 15;
+
+        page.drawText(`  Hauteur: ${results.caissonSize.height} mm`, {
+            x: x + 20,
+            y: y,
+            size: 10,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 15;
+
+        page.drawText(`  Profondeur: ${results.caissonSize.depth} mm`, {
+            x: x + 20,
+            y: y,
+            size: 10,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 15;
+
+        page.drawText(`  Puissance: ${results.caissonSize.power} kW`, {
+            x: x + 20,
+            y: y,
+            size: 10,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 20;
+    }
+
+    // Pertes de charge par conduit
+    if (results.conduits && results.conduits.length > 0) {
+        page.drawText('Pertes de charge par conduit:', {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(0, 0, 0)
+        });
+        y -= 20;
+
+        for (const conduit of results.conduits) {
+            page.drawText(`${conduit.id}: ${conduit.pressureDrop.toFixed(2)} Pa (vitesse: ${conduit.velocity.toFixed(2)} m/s)`, {
+                x: x + 20,
+                y: y,
+                size: 10,
+                color: window.rgb(0, 0, 0)
+            });
+            y -= 15;
+        }
+    }
+
+    return y - 20;
+}
+
+/**
+ * Dessine le résumé de validation
+ * @param {Object} page - Page PDF
+ * @param {Array} elements - Tous les éléments
+ * @param {number} x - Position X
+ * @param {number} y - Position Y
+ * @param {number} width - Largeur disponible
+ * @returns {Promise<number>} Nouvelle position Y
+ */
+async function drawValidationSummary(page, elements, x, y, width) {
+    page.drawText('Validation du réseau', {
+        x: x,
+        y: y,
+        size: 16,
+        color: window.rgb(0, 0, 0)
+    });
+
+    y -= 25;
+
+    // Importer la fonction de validation
+    const { validateNetwork } = await import('./networkValidation.js');
+    const validation = validateNetwork(elements);
+
+    // Résumé
+    page.drawText(`Statut: ${validation.isValid ? 'Valide' : 'Invalide'}`, {
+        x: x,
+        y: y,
+        size: 12,
+        color: validation.isValid ? window.rgb(0, 0.5, 0) : window.rgb(1, 0, 0)
+    });
+    y -= 20;
+
+    // Erreurs
+    if (validation.errors.length > 0) {
+        page.drawText('Erreurs:', {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(1, 0, 0)
+        });
+        y -= 20;
+
+        for (const error of validation.errors) {
+            page.drawText(`• ${error}`, {
+                x: x + 20,
+                y: y,
+                size: 10,
+                color: window.rgb(0, 0, 0)
+            });
+            y -= 15;
+        }
+    }
+
+    // Avertissements
+    if (validation.warnings.length > 0) {
+        page.drawText('Avertissements:', {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(1, 0.5, 0)
+        });
+        y -= 20;
+
+        for (const warning of validation.warnings) {
+            page.drawText(`• ${warning}`, {
+                x: x + 20,
+                y: y,
+                size: 10,
+                color: window.rgb(0, 0, 0)
+            });
+            y -= 15;
+        }
+    }
+
+    // Informations
+    if (validation.info.length > 0) {
+        page.drawText('Informations:', {
+            x: x,
+            y: y,
+            size: 12,
+            color: window.rgb(0, 0, 1)
+        });
+        y -= 20;
+
+        for (const info of validation.info) {
+            page.drawText(`• ${info}`, {
+                x: x + 20,
+                y: y,
+                size: 10,
+                color: window.rgb(0, 0, 0)
+            });
+            y -= 15;
+        }
+    }
+
+    return y - 20;
+}
+
+/**
+ * Télécharge le PDF
+ * @param {Uint8Array} pdfBytes - Contenu du PDF
+ * @param {string} fileName - Nom du fichier
+ */
+export function downloadPDF(pdfBytes, fileName = 'reseau_ventilation.pdf') {
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    // Libérer l'URL
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+/**
+ * Classe principale de l'application Design Ventilation
+ */
+
+
+
+, window.STANDARD_RECT_SIZES from window
+
+, calculateRecommendedFlow from window
+, calculateTotalPressureDrop from window
+
+ from window
+
+window.VentilationApp = class VentilationApp {
+    constructor() {
+        // Éléments du réseau
+        this.elements = [];
+        this.selectedElement = null;
+        this.selectedElements = new Set();
+        
+        // Canvas et contexte de dessin
+        this.canvas = null;
+        this.ctx = null;
+        this.scale = 1;
+        this.offset = { x: 0, y: 0 };
+        this.isDragging = false;
+        this.dragStart = { x: 0, y: 0 };
+        
+        // Outils
+        this.currentTool = 'select';
+        this.flowDirection = 'supply'; // 'supply' ou 'extract'
+        this.showFlow = false;
+        
+        // État du dessin
+        this.drawingConduit = false;
+        this.conduitStartElement = null;
+        this.conduitStartPoint = null;
+        this.tempConduit = null;
+        
+        // UI
+        this.propertiesPanel = null;
+        this.resultsPanel = null;
+        this.validationPanel = null;
+        
+        // Historique
+        this.history = [];
+        this.historyIndex = -1;
+    }
+
+    /**
+     * Initialise l'application
+     */
+    init() {
+        // Récupérer les éléments du DOM
+        this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Configurer le canvas
+        this.setupCanvas();
+        
+        // Configurer les écouteurs d'événements
+        this.setupEventListeners();
+        
+        // Configurer les panneaux
+        this.setupPanels();
+        
+        // Charger un réseau de test (optionnel)
+        // this.loadTestNetwork();
+        
+        // Dessiner initialement
+        this.draw();
+        
+        // Mettre à jour l'interface
+        this.updateUI();
+    }
+
+    /**
+     * Configure le canvas
+     */
+    setupCanvas() {
+        // Redimensionner le canvas
+        const resizeCanvas = () => {
+            const container = this.canvas.parentElement;
+            this.canvas.width = container.clientWidth;
+            this.canvas.height = container.clientHeight;
+            this.draw();
+        };
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Style du canvas
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 1;
+        this.ctx.font = '12px Arial';
+    }
+
+    /**
+     * Configure les écouteurs d'événements
+     */
+    setupEventListeners() {
+        // Événements de la souris
+        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        this.canvas.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+        this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
+        this.canvas.addEventListener('dblclick', this.handleDoubleClick.bind(this));
+        
+        // Événements tactiles
+        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
+        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
+        
+        // Boutons de la barre d'outils
+        document.getElementById('tool-select').addEventListener('click', () => this.setTool('select'));
+        document.getElementById('tool-caisson').addEventListener('click', () => this.setTool('caisson'));
+        document.getElementById('tool-bouche').addEventListener('click', () => this.setTool('bouche'));
+        document.getElementById('tool-conduit-round').addEventListener('click', () => this.setTool('conduit-round'));
+        document.getElementById('tool-conduit-rect').addEventListener('click', () => this.setTool('conduit-rect'));
+        
+        // Boutons d'action
+        document.getElementById('calculate-btn').addEventListener('click', () => this.calculateNetwork());
+        document.getElementById('clear-btn').addEventListener('click', () => this.showConfirmClear());
+        document.getElementById('export-pdf-btn').addEventListener('click', () => this.exportPDF());
+        document.getElementById('flow-direction').addEventListener('change', (e) => {
+            this.flowDirection = e.target.value;
+            this.draw();
+        });
+        
+        // Bouton d'aide
+        document.getElementById('help-btn').addEventListener('click', () => this.showHelp());
+        
+        // Modale de confirmation
+        document.getElementById('confirm-yes').addEventListener('click', () => this.clearAll());
+        document.getElementById('confirm-no').addEventListener('click', () => this.hideConfirmModal());
+        document.getElementById('close-confirm').addEventListener('click', () => this.hideConfirmModal());
+        
+        // Modale d'aide
+        document.getElementById('close-help').addEventListener('click', () => this.hideHelpModal());
+        document.getElementById('close-help-footer').addEventListener('click', () => this.hideHelpModal());
+        
+        // Panneaux
+        document.getElementById('close-properties').addEventListener('click', () => this.hidePropertiesPanel());
+        document.getElementById('close-results').addEventListener('click', () => this.hideResultsPanel());
+        document.getElementById('close-validation').addEventListener('click', () => this.hideValidationPanel());
+    }
+
+    /**
+     * Configure les panneaux
+     */
+    setupPanels() {
+        this.propertiesPanel = document.getElementById('properties-content');
+        this.resultsPanel = document.getElementById('results-content');
+        this.validationPanel = document.getElementById('validation-content');
+    }
+
+    /**
+     * Définit l'outil courant
+     * @param {string} tool - Nom de l'outil
+     */
+    setTool(tool) {
+        // Désactiver tous les boutons d'outil
+        const toolButtons = document.querySelectorAll('.tool-btn');
+        toolButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Activer le bouton sélectionné
+        const activeButton = document.getElementById(`tool-${tool}`);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+        
+        this.currentTool = tool;
+        
+        // Réinitialiser l'état de dessin
+        this.drawingConduit = false;
+        this.conduitStartElement = null;
+        this.conduitStartPoint = null;
+        this.tempConduit = null;
+        
+        // Mettre à jour l'interface
+        this.updateUI();
+        this.draw();
+    }
+
+    /**
+     * Gère le clic de la souris
+     * @param {MouseEvent} event - Événement de la souris
+     */
+    handleMouseDown(event) {
+        const point = this.getCanvasCoordinates(event);
+        
+        if (this.currentTool === 'select') {
+            // Sélectionner un élément
+            const element = this.findElementAtPoint(point.x, point.y);
+            
+            if (element) {
+                // Si la touche Shift est enfoncée, ajouter à la sélection multiple
+                if (event.shiftKey) {
+                    if (this.selectedElements.has(element.id)) {
+                        this.selectedElements.delete(element.id);
+                    } else {
+                        this.selectedElements.add(element.id);
+                    }
+                    this.selectedElement = null;
+                } else {
+                    // Sélection simple
+                    this.selectedElement = element;
+                    this.selectedElements.clear();
+                    this.selectedElements.add(element.id);
+                }
+                
+                // Afficher les propriétés
+                this.showProperties(element);
+                
+                // Commencer le glisser-déposer
+                this.isDragging = true;
+                this.dragStart = { x: point.x, y: point.y };
+                
+                this.draw();
+            } else {
+                // Désélectionner tout
+                this.selectedElement = null;
+                this.selectedElements.clear();
+                this.hidePropertiesPanel();
+                
+                // Commencer le défilement
+                this.isDragging = true;
+                this.dragStart = { x: point.x, y: point.y };
+            }
+        } else if (this.currentTool === 'caisson') {
+            // Ajouter un caisson
+            this.addCaisson(point.x, point.y);
+        } else if (this.currentTool === 'bouche') {
+            // Ajouter une bouche
+            this.addBouche(point.x, point.y);
+        } else if (this.currentTool === 'conduit-round' || this.currentTool === 'conduit-rect') {
+            // Commencer à dessiner un conduit
+            const element = this.findElementAtPoint(point.x, point.y);
+            
+            if (element && (element.type === 'caisson' || element.type === 'bouche')) {
+                this.drawingConduit = true;
+                this.conduitStartElement = element;
+                this.conduitStartPoint = { x: point.x, y: point.y };
+                
+                // Créer un conduit temporaire
+                this.tempConduit = new window.Conduit(
+                    point.x, point.y, point.x, point.y,
+                    this.currentTool === 'conduit-round'
+                );
+            }
+        }
+    }
+
+    /**
+     * Gère le mouvement de la souris
+     * @param {MouseEvent} event - Événement de la souris
+     */
+    handleMouseMove(event) {
+        const point = this.getCanvasCoordinates(event);
+        
+        if (this.isDragging) {
+            // Déplacer les éléments sélectionnés ou défiler la vue
+            if (this.selectedElements.size > 0) {
+                // Déplacer les éléments
+                const dx = point.x - this.dragStart.x;
+                const dy = point.y - this.dragStart.y;
+                
+                this.moveSelectedElements(dx, dy);
+                
+                this.dragStart = { x: point.x, y: point.y };
+                this.draw();
+            } else {
+                // Défiler la vue
+                this.offset.x += point.x - this.dragStart.x;
+                this.offset.y += point.y - this.dragStart.y;
+                this.dragStart = { x: point.x, y: point.y };
+                this.draw();
+            }
+        } else if (this.drawingConduit) {
+            // Mettre à jour le conduit temporaire
+            this.tempConduit.end.x = point.x;
+            this.tempConduit.end.y = point.y;
+            this.tempConduit.x = (this.tempConduit.start.x + this.tempConduit.end.x) / 2;
+            this.tempConduit.y = (this.tempConduit.start.y + this.tempConduit.end.y) / 2;
+            this.tempConduit.length = this.tempConduit.calculateLength();
+            
+            this.draw();
+        } else {
+            // Survoler un élément
+            const element = this.findElementAtPoint(point.x, point.y);
+            
+            if (element) {
+                this.canvas.style.cursor = 'pointer';
+            } else {
+                this.canvas.style.cursor = this.currentTool === 'select' ? 'default' : 'crosshair';
+            }
+        }
+    }
+
+    /**
+     * Gère le relâchement de la souris
+     * @param {MouseEvent} event - Événement de la souris
+     */
+    handleMouseUp(event) {
+        const point = this.getCanvasCoordinates(event);
+        
+        if (this.isDragging) {
+            this.isDragging = false;
+        }
+        
+        if (this.drawingConduit) {
+            // Terminer de dessiner le conduit
+            const endElement = this.findElementAtPoint(point.x, point.y);
+            
+            if (endElement && (endElement.type === 'caisson' || endElement.type === 'bouche') && 
+                endElement.id !== this.conduitStartElement.id) {
+                // Ajouter le conduit
+                this.addConduit(
+                    this.conduitStartElement,
+                    endElement,
+                    this.currentTool === 'conduit-round'
+                );
+            }
+            
+            // Réinitialiser
+            this.drawingConduit = false;
+            this.conduitStartElement = null;
+            this.conduitStartPoint = null;
+            this.tempConduit = null;
+            
+            this.draw();
+        }
+    }
+
+    /**
+     * Gère le survol de la souris hors du canvas
+     */
+    handleMouseLeave() {
+        this.isDragging = false;
+        this.canvas.style.cursor = 'default';
+    }
+
+    /**
+     * Gère la molette de la souris (zoom)
+     * @param {WheelEvent} event - Événement de la molette
+     */
+    handleWheel(event) {
+        event.preventDefault();
+        
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        const oldScale = this.scale;
+        this.scale = Math.max(0.1, Math.min(3, this.scale + delta));
+        
+        // Ajuster l'offset pour zoomer vers le curseur
+        const point = this.getCanvasCoordinates(event);
+        this.offset.x = point.x - (point.x - this.offset.x) * (this.scale / oldScale);
+        this.offset.y = point.y - (point.y - this.offset.y) * (this.scale / oldScale);
+        
+        this.draw();
+    }
+
+    /**
+     * Gère le double-clic
+     * @param {MouseEvent} event - Événement de la souris
+     */
+    handleDoubleClick(event) {
+        const point = this.getCanvasCoordinates(event);
+        const element = this.findElementAtPoint(point.x, point.y);
+        
+        if (element) {
+            // Ouvrir les propriétés en mode édition
+            this.showProperties(element);
+        }
+    }
+
+    /**
+     * Gère le toucher (début)
+     * @param {TouchEvent} event - Événement tactile
+     */
+    handleTouchStart(event) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        const mouseEvent = new MouseEvent('mousedown', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        this.canvas.dispatchEvent(mouseEvent);
+    }
+
+    /**
+     * Gère le toucher (mouvement)
+     * @param {TouchEvent} event - Événement tactile
+     */
+    handleTouchMove(event) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        const mouseEvent = new MouseEvent('mousemove', {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        this.canvas.dispatchEvent(mouseEvent);
+    }
+
+    /**
+     * Gère le toucher (fin)
+     * @param {TouchEvent} event - Événement tactile
+     */
+    handleTouchEnd(event) {
+        event.preventDefault();
+        const mouseEvent = new MouseEvent('mouseup', {});
+        this.canvas.dispatchEvent(mouseEvent);
+    }
+
+    /**
+     * Obtient les coordonnées du canvas à partir d'un événement de souris
+     * @param {MouseEvent} event - Événement de la souris
+     * @returns {Object} Coordonnées x et y
+     */
+    getCanvasCoordinates(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left - this.offset.x) / this.scale,
+            y: (event.clientY - rect.top - this.offset.y) / this.scale
+        };
+    }
+
+    /**
+     * Trouve un élément à une position donnée
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     * @returns {Object|null} L'élément trouvé ou null
+     */
+    findElementAtPoint(x, y) {
+        // Parcourir les éléments dans l'ordre inverse pour sélectionner le premier au-dessus
+        for (let i = this.elements.length - 1; i >= 0; i--) {
+            const element = this.elements[i];
+            if (element.contains(x, y, 10 / this.scale)) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Ajoute un caisson
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     */
+    addCaisson(x, y) {
+        const caisson = new window.Caisson(x, y);
+        this.elements.push(caisson);
+        
+        // Sauvegarder dans l'historique
+        this.saveToHistory();
+        
+        // Sélectionner le nouvel élément
+        this.selectedElement = caisson;
+        this.selectedElements.clear();
+        this.selectedElements.add(caisson.id);
+        
+        // Afficher les propriétés
+        this.showProperties(caisson);
+        
+        this.draw();
+        this.showNotification('Caisson ajouté', 'success');
+    }
+
+    /**
+     * Ajoute une bouche
+     * @param {number} x - Coordonnée X
+     * @param {number} y - Coordonnée Y
+     */
+    addBouche(x, y) {
+        const bouche = new window.Bouche(x, y);
+        this.elements.push(bouche);
+        
+        // Sauvegarder dans l'historique
+        this.saveToHistory();
+        
+        // Sélectionner le nouvel élément
+        this.selectedElement = bouche;
+        this.selectedElements.clear();
+        this.selectedElements.add(bouche.id);
+        
+        // Afficher les propriétés
+        this.showProperties(bouche);
+        
+        this.draw();
+        this.showNotification('Bouche ajoutée', 'success');
+    }
+
+    /**
+     * Ajoute un conduit entre deux éléments
+     * @param {Object} startElement - Élément de départ
+     * @param {Object} endElement - Élément d'arrivée
+     * @param {boolean} isRound - Vrai si conduit rond
+     */
+    addConduit(startElement, endElement, isRound = true) {
+        // Vérifier si un conduit existe déjà entre ces éléments
+        const existingConduit = this.elements.find(conduit => 
+            conduit.type === 'conduit' &&
+            ((conduit.startElementId === startElement.id && conduit.endElementId === endElement.id) ||
+             (conduit.startElementId === endElement.id && conduit.endElementId === startElement.id))
+        );
+        
+        if (existingConduit) {
+            this.showNotification('Un conduit existe déjà entre ces éléments', 'warning');
+            return;
+        }
+        
+        // Obtenir les points de connexion
+        const startPoint = startElement.getClosestConnectionPoint(endElement.x, endElement.y);
+        const endPoint = endElement.getClosestConnectionPoint(startElement.x, startElement.y);
+        
+        const conduit = new window.Conduit(
+            startPoint.x, startPoint.y,
+            endPoint.x, endPoint.y,
+            isRound
+        );
+        
+        conduit.startElementId = startElement.id;
+        conduit.endElementId = endElement.id;
+        
+        // Ajouter les connexions
+        startElement.addConnection(conduit.id);
+        endElement.addConnection(conduit.id);
+        conduit.addConnection(startElement.id);
+        conduit.addConnection(endElement.id);
+        
+        this.elements.push(conduit);
+        
+        // Sauvegarder dans l'historique
+        this.saveToHistory();
+        
+        // Sélectionner le nouvel élément
+        this.selectedElement = conduit;
+        this.selectedElements.clear();
+        this.selectedElements.add(conduit.id);
+        
+        // Afficher les propriétés
+        this.showProperties(conduit);
+        
+        this.draw();
+        this.showNotification('Conduit ajouté', 'success');
+    }
+
+    /**
+     * Déplace les éléments sélectionnés
+     * @param {number} dx - Déplacement en X
+     * @param {number} dy - Déplacement en Y
+     */
+    moveSelectedElements(dx, dy) {
+        for (const element of this.elements) {
+            if (this.selectedElements.has(element.id)) {
+                element.x += dx;
+                element.y += dy;
+                
+                // Si c'est un conduit, déplacer aussi les points
+                if (element.type === 'conduit') {
+                    element.start.x += dx;
+                    element.start.y += dy;
+                    element.end.x += dx;
+                    element.end.y += dy;
+                    element.x = (element.start.x + element.end.x) / 2;
+                    element.y = (element.start.y + element.end.y) / 2;
+                    
+                    // Déplacer les points de contrôle
+                    for (const cp of element.controlPoints) {
+                        cp.x += dx;
+                        cp.y += dy;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Supprime les éléments sélectionnés
+     */
+    deleteSelectedElements() {
+        if (this.selectedElements.size === 0) return;
+        
+        // Supprimer les connexions
+        for (const elementId of this.selectedElements) {
+            const element = this.findElementById(elementId);
+            if (element) {
+                // Supprimer les connexions vers cet élément
+                for (const connectionId of element.connections) {
+                    const connectedElement = this.findElementById(connectionId);
+                    if (connectedElement) {
+                        connectedElement.removeConnection(element.id);
+                    }
+                }
+            }
+        }
+        
+        // Supprimer les éléments
+        this.elements = this.elements.filter(el => !this.selectedElements.has(el.id));
+        
+        // Réinitialiser la sélection
+        this.selectedElement = null;
+        this.selectedElements.clear();
+        
+        // Sauvegarder dans l'historique
+        this.saveToHistory();
+        
+        this.draw();
+        this.hidePropertiesPanel();
+        this.showNotification(`${this.selectedElements.size} élément(s) supprimé(s)`, 'success');
+    }
+
+    /**
+     * Trouve un élément par son ID
+     * @param {string} id - ID de l'élément
+     * @returns {Object|null} L'élément trouvé ou null
+     */
+    findElementById(id) {
+        return this.elements.find(el => el.id === id) || null;
+    }
+
+    /**
+     * Affiche les propriétés d'un élément
+     * @param {Object} element - L'élément
+     */
+    showProperties(element) {
+        if (!element || !this.propertiesPanel) return;
+        
+        let html = '';
+        
+        if (element.type === 'caisson') {
+            html = this.getCaissonPropertiesHTML(element);
+        } else if (element.type === 'bouche') {
+            html = this.getBouchePropertiesHTML(element);
+        } else if (element.type === 'conduit') {
+            html = this.getConduitPropertiesHTML(element);
+        }
+        
+        this.propertiesPanel.innerHTML = html;
+        
+        // Ajouter les écouteurs d'événements pour les champs de formulaire
+        this.setupPropertyEventListeners(element);
+    }
+
+    /**
+     * Obtient le HTML des propriétés d'un caisson
+     * @param {Object} caisson - Le caisson
+     * @returns {string} HTML
+     */
+    getCaissonPropertiesHTML(caisson) {
+        return `
+            <div class="form-group">
+                <label class="form-label">ID</label>
+                <input type="text" class="form-input" value="${caisson.id}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-input" id="caisson-name" value="${caisson.name}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Débit (m³/h)</label>
+                <input type="number" class="form-input" id="caisson-flow" value="${caisson.flowRate}" min="0" step="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Largeur (mm)</label>
+                <input type="number" class="form-input" id="caisson-width" value="${caisson.width}" min="10" step="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Hauteur (mm)</label>
+                <input type="number" class="form-input" id="caisson-height" value="${caisson.height}" min="10" step="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Matériau</label>
+                <select class="form-select" id="caisson-material">
+                    <option value="acier" ${caisson.material === 'acier' ? 'selected' : ''}>Acier</option>
+                    <option value="aluminium" ${caisson.material === 'aluminium' ? 'selected' : ''}>Aluminium</option>
+                    <option value="flexible" ${caisson.material === 'flexible' ? 'selected' : ''}>Flexible</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Pression disponible (Pa)</label>
+                <input type="number" class="form-input" id="caisson-pressure" value="${caisson.pressure}" min="0" step="1">
+            </div>
+            <div class="form-group">
+                <button class="btn danger" id="delete-element">Supprimer</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Obtient le HTML des propriétés d'une bouche
+     * @param {Object} bouche - La bouche
+     * @returns {string} HTML
+     */
+    getBouchePropertiesHTML(bouche) {
+        return `
+            <div class="form-group">
+                <label class="form-label">ID</label>
+                <input type="text" class="form-input" value="${bouche.id}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-input" id="bouche-name" value="${bouche.name}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Débit (m³/h)</label>
+                <input type="number" class="form-input" id="bouche-flow" value="${bouche.flowRate}" min="0" step="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Forme</label>
+                <select class="form-select" id="bouche-shape">
+                    <option value="square" ${bouche.shape === 'square' ? 'selected' : ''}>Carrée</option>
+                    <option value="round" ${bouche.shape === 'round' ? 'selected' : ''}>Ronde</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Taille (mm)</label>
+                <input type="number" class="form-input" id="bouche-size" value="${bouche.size}" min="10" step="1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Sens de l'air</label>
+                <select class="form-select" id="bouche-air-type">
+                    <option value="supply" ${bouche.airType === 'supply' ? 'selected' : ''}>Soufflage</option>
+                    <option value="extract" ${bouche.airType === 'extract' ? 'selected' : ''}>Aspiration</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button class="btn danger" id="delete-element">Supprimer</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Obtient le HTML des propriétés d'un conduit
+     * @param {Object} conduit - Le conduit
+     * @returns {string} HTML
+     */
+    getConduitPropertiesHTML(conduit) {
+        const dimHTML = conduit.isRound ? `
+            <div class="form-group">
+                <label class="form-label">Diamètre (mm)</label>
+                <select class="form-select" id="conduit-diameter">
+                    ${window.STANDARD_DIAMETERS.map(d => 
+                        `<option value="${d}" ${conduit.diameter === d ? 'selected' : ''}>${d}</option>`
+                    ).join('')}
+                </select>
+            </div>
+        ` : `
+            <div class="form-group">
+                <label class="form-label">Largeur (mm)</label>
+                <select class="form-select" id="conduit-width">
+                    ${window.STANDARD_RECT_SIZES.map(s => 
+                        `<option value="${s.width}" ${conduit.width === s.width ? 'selected' : ''}>${s.width}</option>`
+                    ).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Hauteur (mm)</label>
+                <select class="form-select" id="conduit-height">
+                    ${window.STANDARD_RECT_SIZES.map(s => 
+                        `<option value="${s.height}" ${conduit.height === s.height ? 'selected' : ''}>${s.height}</option>`
+                    ).join('')}
+                </select>
+            </div>
+        `;
+
+        return `
+            <div class="form-group">
+                <label class="form-label">ID</label>
+                <input type="text" class="form-input" value="${conduit.id}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="conduit-type" disabled>
+                    <option value="round" ${conduit.isRound ? 'selected' : ''}>Rond</option>
+                    <option value="rect" ${!conduit.isRound ? 'selected' : ''}>Rectangulaire</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Débit (m³/h)</label>
+                <input type="number" class="form-input" id="conduit-flow" value="${conduit.flowRate}" min="0" step="1">
+            </div>
+            ${dimHTML}
+            <div class="form-group">
+                <label class="form-label">Matériau</label>
+                <select class="form-select" id="conduit-material">
+                    <option value="acier" ${conduit.material === 'acier' ? 'selected' : ''}>Acier</option>
+                    <option value="aluminium" ${conduit.material === 'aluminium' ? 'selected' : ''}>Aluminium</option>
+                    <option value="flexible" ${conduit.material === 'flexible' ? 'selected' : ''}>Flexible</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Vitesse (m/s)</label>
+                <input type="text" class="form-input" id="conduit-velocity" value="${conduit.velocity ? conduit.velocity.toFixed(2) : '0'}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Perte de charge (Pa)</label>
+                <input type="text" class="form-input" id="conduit-pressure-drop" value="${conduit.pressureDrop ? conduit.pressureDrop.toFixed(2) : '0'}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Connecté à</label>
+                <input type="text" class="form-input" value="${conduit.startElementId || 'Départ'} → ${conduit.endElementId || 'Arrivée'}" disabled>
+            </div>
+            <div class="form-group">
+                <button class="btn danger" id="delete-element">Supprimer</button>
+            </div>
+        `;
+    }
+
+    /**
+     * Configure les écouteurs d'événements pour les propriétés
+     * @param {Object} element - L'élément
+     */
+    setupPropertyEventListeners(element) {
+        // Bouton de suppression
+        const deleteBtn = document.getElementById('delete-element');
+        if (deleteBtn) {
+            deleteBtn.onclick = () => {
+                this.selectedElements.clear();
+                this.selectedElements.add(element.id);
+                this.deleteSelectedElements();
+            };
+        }
+        
+        // Écouteurs spécifiques selon le type
+        if (element.type === 'caisson') {
+            this.setupCaissonPropertyListeners(element);
+        } else if (element.type === 'bouche') {
+            this.setupBouchePropertyListeners(element);
+        } else if (element.type === 'conduit') {
+            this.setupConduitPropertyListeners(element);
+        }
+    }
+
+    /**
+     * Configure les écouteurs pour un caisson
+     * @param {Object} caisson - Le caisson
+     */
+    setupCaissonPropertyListeners(caisson) {
+        const updateCaisson = () => {
+            caisson.name = document.getElementById('caisson-name').value;
+            caisson.flowRate = parseFloat(document.getElementById('caisson-flow').value) || 0;
+            caisson.width = parseInt(document.getElementById('caisson-width').value) || caisson.width;
+            caisson.height = parseInt(document.getElementById('caisson-height').value) || caisson.height;
+            caisson.material = document.getElementById('caisson-material').value;
+            caisson.pressure = parseFloat(document.getElementById('caisson-pressure').value) || 0;
+            this.draw();
+        };
+        
+        document.getElementById('caisson-name').addEventListener('change', updateCaisson);
+        document.getElementById('caisson-flow').addEventListener('change', updateCaisson);
+        document.getElementById('caisson-width').addEventListener('change', updateCaisson);
+        document.getElementById('caisson-height').addEventListener('change', updateCaisson);
+        document.getElementById('caisson-material').addEventListener('change', updateCaisson);
+        document.getElementById('caisson-pressure').addEventListener('change', updateCaisson);
+    }
+
+    /**
+     * Configure les écouteurs pour une bouche
+     * @param {Object} bouche - La bouche
+     */
+    setupBouchePropertyListeners(bouche) {
+        const updateBouche = () => {
+            bouche.name = document.getElementById('bouche-name').value;
+            bouche.flowRate = parseFloat(document.getElementById('bouche-flow').value) || 0;
+            bouche.shape = document.getElementById('bouche-shape').value;
+            bouche.size = parseInt(document.getElementById('bouche-size').value) || bouche.size;
+            bouche.airType = document.getElementById('bouche-air-type').value;
+            this.draw();
+        };
+        
+        document.getElementById('bouche-name').addEventListener('change', updateBouche);
+        document.getElementById('bouche-flow').addEventListener('change', updateBouche);
+        document.getElementById('bouche-shape').addEventListener('change', updateBouche);
+        document.getElementById('bouche-size').addEventListener('change', updateBouche);
+        document.getElementById('bouche-air-type').addEventListener('change', updateBouche);
+    }
+
+    /**
+     * Configure les écouteurs pour un conduit
+     * @param {Object} conduit - Le conduit
+     */
+    setupConduitPropertyListeners(conduit) {
+        const updateConduit = () => {
+            conduit.flowRate = parseFloat(document.getElementById('conduit-flow').value) || 0;
+            
+            if (conduit.isRound) {
+                conduit.diameter = parseInt(document.getElementById('conduit-diameter').value) || conduit.diameter;
+            } else {
+                conduit.width = parseInt(document.getElementById('conduit-width').value) || conduit.width;
+                conduit.height = parseInt(document.getElementById('conduit-height').value) || conduit.height;
+            }
+            
+            conduit.material = document.getElementById('conduit-material').value;
+            this.draw();
+        };
+        
+        document.getElementById('conduit-flow').addEventListener('change', updateConduit);
+        
+        if (conduit.isRound) {
+            document.getElementById('conduit-diameter').addEventListener('change', updateConduit);
+        } else {
+            document.getElementById('conduit-width').addEventListener('change', updateConduit);
+            document.getElementById('conduit-height').addEventListener('change', updateConduit);
+        }
+        
+        document.getElementById('conduit-material').addEventListener('change', updateConduit);
+    }
+
+    /**
+     * Masque le panneau des propriétés
+     */
+    hidePropertiesPanel() {
+        if (this.propertiesPanel) {
+            this.propertiesPanel.innerHTML = '<p class="empty-message">Sélectionnez un élément pour voir ses propriétés.</p>';
+        }
+    }
+
+    /**
+     * Affiche les résultats des calculs
+     * @param {Object} results - Résultats des calculs
+     */
+    showResults(results) {
+        if (!this.resultsPanel) return;
+        
+        let html = '<h4>Résultats des calculs</h4>';
+        
+        if (results.totalFlow) {
+            html += `<p><strong>Débit total:</strong> ${results.totalFlow} m³/h</p>`;
+        }
+        
+        if (results.totalPressure) {
+            html += `<p><strong>Pression totale nécessaire:</strong> ${results.totalPressure.toFixed(2)} Pa</p>`;
+        }
+        
+        if (results.caissonSize) {
+            html += `<p><strong>Dimensionnement du caisson:</strong></p>`;
+            html += `<ul>`;
+            html += `<li>Largeur: ${results.caissonSize.width} mm</li>`;
+            html += `<li>Hauteur: ${results.caissonSize.height} mm</li>`;
+            html += `<li>Profondeur: ${results.caissonSize.depth} mm</li>`;
+            html += `<li>Puissance: ${results.caissonSize.power} kW</li>`;
+            html += `</ul>`;
+        }
+        
+        if (results.conduits && results.conduits.length > 0) {
+            html += `<p><strong>Pertes de charge par conduit:</strong></p>`;
+            html += `<table class="pdf-table">`;
+            html += `<thead><tr><th>ID</th><th>Perte de charge (Pa)</th><th>Vitesse (m/s)</th></tr></thead>`;
+            html += `<tbody>`;
+            
+            for (const conduit of results.conduits) {
+                html += `<tr>`;
+                html += `<td>${conduit.id}</td>`;
+                html += `<td>${conduit.pressureDrop.toFixed(2)}</td>`;
+                html += `<td>${conduit.velocity.toFixed(2)}</td>`;
+                html += `</tr>`;
+            }
+            
+            html += `</tbody></table>`;
+        }
+        
+        this.resultsPanel.innerHTML = html;
+    }
+
+    /**
+     * Masque le panneau des résultats
+     */
+    hideResultsPanel() {
+        if (this.resultsPanel) {
+            this.resultsPanel.innerHTML = '<p class="empty-message">Calculez le réseau pour voir les résultats.</p>';
+        }
+    }
+
+    /**
+     * Affiche le résumé de validation
+     * @param {Object} validation - Résultats de la validation
+     */
+    showValidation(validation) {
+        if (!this.validationPanel) return;
+        
+        let html = '<h4>Validation du réseau</h4>';
+        
+        html += `<p><strong>Statut:</strong> <span class="badge ${validation.isValid ? 'success' : 'error'}">${validation.isValid ? 'Valide' : 'Invalide'}</span></p>`;
+        
+        if (validation.errors.length > 0) {
+            html += `<p><strong>Erreurs:</strong></p><ul>`;
+            validation.errors.forEach(error => {
+                html += `<li class="text-danger">${error}</li>`;
+            });
+            html += `</ul>`;
+        }
+        
+        if (validation.warnings.length > 0) {
+            html += `<p><strong>Avertissements:</strong></p><ul>`;
+            validation.warnings.forEach(warning => {
+                html += `<li class="text-warning">${warning}</li>`;
+            });
+            html += `</ul>`;
+        }
+        
+        if (validation.info.length > 0) {
+            html += `<p><strong>Informations:</strong></p><ul>`;
+            validation.info.forEach(info => {
+                html += `<li>${info}</li>`;
+            });
+            html += `</ul>`;
+        }
+        
+        this.validationPanel.innerHTML = html;
+    }
+
+    /**
+     * Masque le panneau de validation
+     */
+    hideValidationPanel() {
+        if (this.validationPanel) {
+            this.validationPanel.innerHTML = '<p class="empty-message">Aucune erreur détectée.</p>';
+        }
+    }
+
+    /**
+     * Calcule le réseau
+     */
+    calculateNetwork() {
+        // Valider le réseau
+        const validation = window.validateNetwork(this.elements);
+        this.showValidation(validation);
+        
+        if (!validation.isValid) {
+            this.showNotification('Corrigez les erreurs avant de calculer', 'error');
+            return;
+        }
+        
+        // Calculer les débits
+        const elementsWithFlows = window.calculateNetworkFlows(this.elements, this.flowDirection);
+        
+        // Mettre à jour les éléments
+        this.elements = elementsWithFlows;
+        
+        // Dimensionner les conduits
+        const bouches = this.elements.filter(el => el.type === 'bouche');
+        const conduits = this.elements.filter(el => el.type === 'conduit');
+        
+        const dimensionedConduits = window.dimensionAllConduits(conduits, bouches, this.flowDirection);
+        
+        // Remplacer les conduits
+        this.elements = this.elements.filter(el => el.type !== 'conduit');
+        this.elements.push(...dimensionedConduits);
+        
+        // Calculer les pertes de charge
+        const pressureResults = window.calculateNetworkPressureLoss(this.elements);
+        
+        // Mettre à jour les conduits avec les pertes de charge
+        for (const conduit of this.elements) {
+            if (conduit.type === 'conduit') {
+                const pressureResult = pressureResults.conduits.find(c => c.id === conduit.id);
+                if (pressureResult) {
+                    conduit.pressureDrop = pressureResult.pressureDrop;
+                    conduit.velocity = pressureResult.velocity;
+                }
+            }
+        }
+        
+        // Afficher les résultats
+        this.showResults(pressureResults);
+        
+        // Dessiner
+        this.draw();
+        
+        this.showNotification('Calculs terminés', 'success');
+    }
+
+    /**
+     * Exporte le réseau en PDF
+     */
+    async exportPDF() {
+        try {
+            // Calculer les résultats si ce n'est pas déjà fait
+            let results = {};
+            const bouches = this.elements.filter(el => el.type === 'bouche');
+            if (bouches.length > 0) {
+                results = window.calculateNetworkPressureLoss(this.elements);
+            }
+            
+            // Générer le PDF
+            const pdfBytes = await window.generatePDF(this.elements, results, this.flowDirection);
+            
+            // Télécharger le PDF
+            window.downloadPDF(pdfBytes, `reseau_ventilation_${new Date().toISOString().slice(0, 10)}.pdf`);
+            
+            this.showNotification('Export PDF terminé', 'success');
+        } catch (error) {
+            console.error('Erreur lors de l\'export PDF:', error);
+            this.showNotification('Erreur lors de l\'export PDF', 'error');
+        }
+    }
+
+    /**
+     * Affiche la modale de confirmation pour effacer tout
+     */
+    showConfirmClear() {
+        const modal = document.getElementById('confirm-modal');
+        modal.classList.add('active');
+    }
+
+    /**
+     * Masque la modale de confirmation
+     */
+    hideConfirmModal() {
+        const modal = document.getElementById('confirm-modal');
+        modal.classList.remove('active');
+    }
+
+    /**
+     * Efface tout le réseau
+     */
+    clearAll() {
+        this.elements = [];
+        this.selectedElement = null;
+        this.selectedElements.clear();
+        
+        // Réinitialiser les compteurs d'IDs
+        window.Caisson.resetIdCounter();
+        window.Bouche.resetIdCounter();
+        window.Conduit.resetIdCounter();
+        
+        // Réinitialiser l'historique
+        this.history = [];
+        this.historyIndex = -1;
+        
+        this.draw();
+        this.hidePropertiesPanel();
+        this.hideResultsPanel();
+        this.hideValidationPanel();
+        this.hideConfirmModal();
+        
+        this.showNotification('Réseau effacé', 'success');
+    }
+
+    /**
+     * Affiche la modale d'aide
+     */
+    showHelp() {
+        const modal = document.getElementById('help-modal');
+        modal.classList.add('active');
+    }
+
+    /**
+     * Masque la modale d'aide
+     */
+    hideHelpModal() {
+        const modal = document.getElementById('help-modal');
+        modal.classList.remove('active');
+    }
+
+    /**
+     * Affiche une notification
+     * @param {string} message - Message de la notification
+     * @param {string} type - Type de notification ('success', 'warning', 'error', 'info')
+     */
+    showNotification(message, type = 'info') {
+        const notifications = document.getElementById('notifications');
+        
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const icon = type === 'success' ? '✓' : 
+                    type === 'warning' ? '⚠' : 
+                    type === 'error' ? '✗' : 'ℹ';
+        
+        notification.innerHTML = `
+            <span class="icon">${icon}</span>
+            <span class="message">${message}</span>
+            <button class="close">×</button>
+        `;
+        
+        notifications.appendChild(notification);
+        
+        // Supprimer après 5 secondes
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+        
+        // Écouteur pour fermer manuellement
+        notification.querySelector('.close').addEventListener('click', () => {
+            notification.remove();
+        });
+    }
+
+    /**
+     * Dessine tous les éléments sur le canvas
+     */
+    draw() {
+        // Effacer le canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Sauvegarder le contexte
+        this.ctx.save();
+        
+        // Appliquer la transformation (zoom et décalage)
+        this.ctx.translate(this.offset.x * this.scale, this.offset.y * this.scale);
+        this.ctx.scale(this.scale, this.scale);
+        
+        // Dessiner la grille
+        this.drawGrid();
+        
+        // Dessiner les éléments
+        for (const element of this.elements) {
+            if (element.type === 'caisson') {
+                element.draw(this.ctx, this.scale, this.flowDirection);
+            } else if (element.type === 'bouche') {
+                element.draw(this.ctx, this.scale, this.flowDirection);
+            } else if (element.type === 'conduit') {
+                element.draw(this.ctx, this.scale, this.flowDirection, this.showFlow);
+            }
+        }
+        
+        // Dessiner le conduit temporaire (si en cours de dessin)
+        if (this.tempConduit) {
+            this.tempConduit.draw(this.ctx, this.scale, this.flowDirection);
+        }
+        
+        // Dessiner les éléments sélectionnés en surbrillance
+        for (const element of this.elements) {
+            if (this.selectedElements.has(element.id)) {
+                element.drawHighlight(this.ctx, this.scale);
+            }
+        }
+        
+        // Restaurer le contexte
+        this.ctx.restore();
+    }
+
+    /**
+     * Dessine la grille
+     */
+    drawGrid() {
+        const gridSize = 20;
+        const width = this.canvas.width / this.scale;
+        const height = this.canvas.height / this.scale;
+        
+        this.ctx.strokeStyle = '#f0f0f0';
+        this.ctx.lineWidth = 1;
+        
+        // Lignes verticales
+        for (let x = -width; x <= width; x += gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, -height);
+            this.ctx.lineTo(x, height);
+            this.ctx.stroke();
+        }
+        
+        // Lignes horizontales
+        for (let y = -height; y <= height; y += gridSize) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(-width, y);
+            this.ctx.lineTo(width, y);
+            this.ctx.stroke();
+        }
+        
+        // Réinitialiser le style
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 1;
+    }
+
+    /**
+     * Sauvegarde l'état actuel dans l'historique
+     */
+    saveToHistory() {
+        // Limiter l'historique à 50 étapes
+        if (this.history.length > 50) {
+            this.history.shift();
+            this.historyIndex--;
+        }
+        
+        // Sauvegarder une copie profonde des éléments
+        const elementsCopy = JSON.parse(JSON.stringify(this.elements));
+        this.history.push(elementsCopy);
+        this.historyIndex = this.history.length - 1;
+    }
+
+    /**
+     * Annule la dernière action
+     */
+    undo() {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            this.elements = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.draw();
+        }
+    }
+
+    /**
+     * Rétablit la dernière action annulée
+     */
+    redo() {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            this.elements = JSON.parse(JSON.stringify(this.history[this.historyIndex]));
+            this.draw();
+        }
+    }
+
+    /**
+     * Met à jour l'interface utilisateur
+     */
+    updateUI() {
+        // Mettre à jour le bouton de calcul
+        const caissons = this.elements.filter(el => el.type === 'caisson');
+        const bouches = this.elements.filter(el => el.type === 'bouche');
+        const calculateBtn = document.getElementById('calculate-btn');
+        
+        if (calculateBtn) {
+            calculateBtn.disabled = caissons.length === 0 || bouches.length === 0;
+        }
+        
+        // Mettre à jour le bouton d'export PDF
+        const exportBtn = document.getElementById('export-pdf-btn');
+        if (exportBtn) {
+            exportBtn.disabled = this.elements.length === 0;
+        }
+    }
+
+    /**
+     * Charge un réseau de test
+     */
+    loadTestNetwork() {
+        // Réinitialiser
+        this.clearAll();
+        
+        // Ajouter un caisson
+        const caisson = new window.Caisson(200, 200);
+        this.elements.push(caisson);
+        
+        // Ajouter des bouches
+        const bouche1 = new window.Bouche(400, 100);
+        bouche1.flowRate = 500;
+        this.elements.push(bouche1);
+        
+        const bouche2 = new window.Bouche(400, 300);
+        bouche2.flowRate = 300;
+        this.elements.push(bouche2);
+        
+        const bouche3 = new window.Bouche(600, 200);
+        bouche3.flowRate = 200;
+        this.elements.push(bouche3);
+        
+        // Ajouter des conduits
+        const conduit1 = new window.Conduit(260, 200, 340, 150, true);
+        conduit1.startElementId = caisson.id;
+        conduit1.endElementId = bouche1.id;
+        caisson.addConnection(conduit1.id);
+        bouche1.addConnection(conduit1.id);
+        conduit1.addConnection(caisson.id);
+        conduit1.addConnection(bouche1.id);
+        this.elements.push(conduit1);
+        
+        const conduit2 = new window.Conduit(260, 200, 340, 250, true);
+        conduit2.startElementId = caisson.id;
+        conduit2.endElementId = bouche2.id;
+        caisson.addConnection(conduit2.id);
+        bouche2.addConnection(conduit2.id);
+        conduit2.addConnection(caisson.id);
+        conduit2.addConnection(bouche2.id);
+        this.elements.push(conduit2);
+        
+        const conduit3 = new window.Conduit(340, 200, 540, 200, true);
+        conduit3.startElementId = caisson.id;
+        conduit3.endElementId = bouche3.id;
+        caisson.addConnection(conduit3.id);
+        bouche3.addConnection(conduit3.id);
+        conduit3.addConnection(caisson.id);
+        conduit3.addConnection(bouche3.id);
+        this.elements.push(conduit3);
+        
+        this.draw();
+        this.showNotification('Réseau de test chargé', 'success');
+    }
+};
+// Point d'entrée de l'application
+// Ce fichier est utilisé par Vite pour le build
+
+// VentilationApp from window
+
+// Attendre que tout soit chargé
+function initApp() {
+    try {
+        if (window.VentilationApp && document.getElementById('canvas')) {
+            const app = new window.VentilationApp();
+            app.init();
+            window.ventilationApp = app;
+            console.log('Application initialisée avec succès');
+        } else {
+            console.error('VentilationApp ou canvas non trouvé');
+            // Afficher une erreur visible
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '0';
+            errorDiv.style.left = '0';
+            errorDiv.style.right = '0';
+            errorDiv.style.padding = '20px';
+            errorDiv.style.background = 'red';
+            errorDiv.style.color = 'white';
+            errorDiv.style.zIndex = '9999';
+            errorDiv.textContent = 'ERREUR: Impossible de charger l\'application. Vérifiez que tous les fichiers JS sont présents.';
+            document.body.prepend(errorDiv);
+            return;
+        }
+    } catch (e) {
+        console.error('Erreur lors de l\'initialisation:', e);
+        const errorDiv = document.createElement('div');
+        errorDiv.style.position = 'fixed';
+        errorDiv.style.top = '0';
+        errorDiv.style.left = '0';
+        errorDiv.style.right = '0';
+        errorDiv.style.padding = '20px';
+        errorDiv.style.background = 'red';
+        errorDiv.style.color = 'white';
+        errorDiv.style.zIndex = '9999';
+        errorDiv.textContent = 'ERREUR: ' + e.message;
+        document.body.prepend(errorDiv);
+    }
+}
+
+// Essayer de démarrer immédiatement
+initApp();
+
+
+    </script>
 </body>
-
-
-
 </html>
-
-
-

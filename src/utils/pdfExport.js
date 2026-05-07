@@ -708,8 +708,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
     y -= 25;
 
     // Importer la fonction de validation
-    const { validateNetwork } = await import('./networkValidation.js');
-    const validation = validateNetwork(elements);
+    const validation = window.validateNetwork(elements);
 
     // Résumé
     page.drawText(`Statut: ${validation.isValid ? 'Valide' : 'Invalide'}`, {

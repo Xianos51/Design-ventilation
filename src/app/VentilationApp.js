@@ -279,11 +279,11 @@ window.VentilationApp = class VentilationApp {
             }
         } else if (this.drawingConduit) {
             // Mettre à jour le conduit temporaire
-            this.tempwindow.Conduit.end.x = point.x;
-            this.tempwindow.Conduit.end.y = point.y;
-            this.tempwindow.Conduit.x = (this.tempwindow.Conduit.start.x + this.tempwindow.Conduit.end.x) / 2;
-            this.tempwindow.Conduit.y = (this.tempwindow.Conduit.start.y + this.tempwindow.Conduit.end.y) / 2;
-            this.tempwindow.Conduit.length = this.tempwindow.Conduit.calculateLength();
+            this.tempConduit.end.x = point.x;
+            this.tempConduit.end.y = point.y;
+            this.tempConduit.x = (this.tempConduit.start.x + this.tempConduit.end.x) / 2;
+            this.tempConduit.y = (this.tempConduit.start.y + this.tempConduit.end.y) / 2;
+            this.tempConduit.length = this.tempConduit.calculateLength();
             
             this.draw();
         } else {
@@ -1218,7 +1218,7 @@ window.VentilationApp = class VentilationApp {
         
         // Dessiner le conduit temporaire (si en cours de dessin)
         if (this.tempConduit) {
-            this.tempwindow.Conduit.draw(this.ctx, this.scale, this.flowDirection);
+            this.tempConduit.draw(this.ctx, this.scale, this.flowDirection);
         }
         
         // Dessiner les éléments sélectionnés en surbrillance

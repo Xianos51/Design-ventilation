@@ -3,11 +3,9 @@
 
 // VentilationApp from window
 
-// Initialiser l'application quand le DOM est chargé
-document.addEventListener('DOMContentLoaded', () => {
-    const app = new window.VentilationApp();
-    app.init();
-    
-    // Exposer l'application au niveau global pour le débogage
-    window.ventilationApp = app;
-});
+// Initialiser l'application directement (le DOM est déjà chargé quand ce script s'exécute)
+const app = new window.VentilationApp();
+app.init();
+
+// Exposer l'application au niveau global pour le débogage
+window.ventilationApp = app;

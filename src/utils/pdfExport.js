@@ -791,7 +791,7 @@ async function drawValidationSummary(page, elements, x, y, width) {
  * @param {Uint8Array} pdfBytes - Contenu du PDF
  * @param {string} fileName - Nom du fichier
  */
-export function downloadPDF(pdfBytes, fileName = 'reseau_ventilation.pdf') {
+window.downloadPDF = function(pdfBytes, fileName = 'reseau_ventilation.pdf') {
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     

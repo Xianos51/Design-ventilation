@@ -88,7 +88,7 @@ const LINEAR_LOSS_COEFFICIENTS = {
  * @param {boolean} isRound - Vrai si conduit rond
  * @returns {number} Perte de charge en Pa
  */
-export function calculateLinearPressureDrop(
+window.calculateLinearPressureDrop = function(
     length, diameter = 0, width = 0, height = 0, 
     flowRate, roughness = 0.00015, isRound = true
 ) {
@@ -157,7 +157,7 @@ function calculateFrictionFactor(reynoldsNumber, roughness, diameter) {
  * @param {boolean} isRound - Vrai si conduit rond
  * @returns {number} Perte de charge en Pa
  */
-export function calculateSingularPressureDrop(velocity, fittingType = 'elbow_90', isRound = true) {
+window.calculateSingularPressureDrop = function(velocity, fittingType = 'elbow_90', isRound = true) {
     if (velocity <= 0) return 0;
 
     const coefficient = window.SINGULAR_LOSS_COEFFICIENTS[fittingType]?.[isRound ? 'round' : 'rect'] || 0.25;
@@ -174,7 +174,7 @@ export function calculateSingularPressureDrop(velocity, fittingType = 'elbow_90'
  * @param {boolean} isRound - Vrai si conduit rond
  * @returns {number} Perte de charge en Pa
  */
-export function calculateReductionPressureDrop(velocityIn, areaIn, areaOut, isRound = true) {
+window.calculateReductionPressureDrop = function(velocityIn, areaIn, areaOut, isRound = true) {
     if (velocityIn <= 0 || areaIn <= 0 || areaOut <= 0) return 0;
 
     // Calculer la vitesse en aval (conservation du débit)
@@ -196,7 +196,7 @@ export function calculateReductionPressureDrop(velocityIn, areaIn, areaOut, isRo
  * @param {boolean} isRound - Vrai si conduit rond
  * @returns {number} Perte de charge en Pa
  */
-export function calculateExpansionPressureDrop(velocityIn, areaIn, areaOut, isRound = true) {
+window.calculateExpansionPressureDrop = function(velocityIn, areaIn, areaOut, isRound = true) {
     if (velocityIn <= 0 || areaIn <= 0 || areaOut <= 0) return 0;
 
     // Calculer la vitesse en aval
@@ -285,7 +285,7 @@ function detectDirectionChanges(conduit, elements) {
  * @param {Array} caissons - Tableau des caissons
  * @returns {number} Pression totale en Pa
  */
-export function calculateTotalNetworkPressure(conduits, bouches, caissons) {
+window.calculateTotalNetworkPressure = function(conduits, bouches, caissons) {
     if (caissons.length === 0) return 0;
 
     // Calculer la perte de charge pour chaque conduit
@@ -304,7 +304,7 @@ export function calculateTotalNetworkPressure(conduits, bouches, caissons) {
  * @param {string} type - Type de caisson ('centrifuge', 'axial')
  * @returns {Object} Dimensions du caisson
  */
-export function sizeCaisson(totalFlow, type = 'centrifuge') {
+window.sizeCaisson = function(totalFlow, type = 'centrifuge') {
     // Dimensions approximatives basées sur le débit
     // (Ces valeurs sont indicatives et doivent être ajustées selon les normes constructeur)
     
@@ -389,7 +389,7 @@ window.calculateNetworkPressureLoss = function(elements) {
  * @param {string} material - Matériau
  * @returns {number} Rugosité en mètres
  */
-export function getMaterialRoughness(material) {
+window.getMaterialRoughness = function(material) {
     return MATERIAL_ROUGHNESS[material] || 0.00015;
 }
 
@@ -398,6 +398,6 @@ export function getMaterialRoughness(material) {
  * @param {string} material - Matériau
  * @returns {number} Coefficient de perte de charge
  */
-export function getLinearLossCoefficient(material) {
+window.getLinearLossCoefficient = function(material) {
     return LINEAR_LOSS_COEFFICIENTS[material] || 0.02;
 }

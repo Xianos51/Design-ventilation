@@ -89,7 +89,7 @@ function window.buildConnectionGraph(elements) {
  * @param {Array} elements - Tous les éléments du réseau
  * @returns {Object} Objet avec allConnected (boolean) et disconnected (Array)
  */
-export function checkBouchesConnected(elements) {
+window.checkBouchesConnected = function(elements) {
     const bouches = elements.filter(el => el.type === 'bouche');
     const caissons = elements.filter(el => el.type === 'caisson');
     const conduits = elements.filter(el => el.type === 'conduit');
@@ -169,7 +169,7 @@ function findElementById(id, elements) {
  * @param {Array} elements - Tous les éléments
  * @returns {Object} Objet avec valid (boolean) et message (string)
  */
-export function checkSingleCaisson(elements) {
+window.checkSingleCaisson = function(elements) {
     const caissons = elements.filter(el => el.type === 'caisson');
 
     if (caissons.length === 0) {
@@ -197,7 +197,7 @@ export function checkSingleCaisson(elements) {
  * @param {Array} bouches - Tableau des bouches
  * @returns {Object} Objet avec valid (boolean), errors (Array) et warnings (Array)
  */
-export function validateBouchesFlowRates(bouches) {
+window.validateBouchesFlowRates = function(bouches) {
     const errors = [];
     const warnings = [];
 
@@ -232,7 +232,7 @@ export function validateBouchesFlowRates(bouches) {
  * @param {Array} elements - Tous les éléments
  * @returns {Object} Objet avec valid (boolean) et disconnected (Array)
  */
-export function checkConduitsConnected(elements) {
+window.checkConduitsConnected = function(elements) {
     const conduits = elements.filter(el => el.type === 'conduit');
     const disconnected = [];
 
@@ -267,7 +267,7 @@ export function checkConduitsConnected(elements) {
  * @param {Array} conduits - Tableau des conduits
  * @returns {Object} Objet avec hasCrossings (boolean) et crossings (Array)
  */
-export function detectConduitCrossings(conduits) {
+window.detectConduitCrossings = function(conduits) {
     const crossings = [];
 
     for (let i = 0; i < conduits.length; i++) {
@@ -341,7 +341,7 @@ function orientation(p, q, r) {
  * @param {number} maxNodes - Nombre maximum de nœuds (défaut: 100)
  * @returns {Object} Objet avec valid (boolean) et message (string)
  */
-export function checkNodeLimit(elements, maxNodes = 100) {
+window.checkNodeLimit = function(elements, maxNodes = 100) {
     const bouches = elements.filter(el => el.type === 'bouche');
 
     if (bouches.length > maxNodes) {

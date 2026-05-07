@@ -31,7 +31,7 @@ window.FLOW_RATES_PER_AREA = {
  * @param {Array} bouches - Tableau des bouches
  * @returns {number} Débit total en m³/h
  */
-export function calculateTotalFlow(bouches) {
+window.calculateTotalFlow = function(bouches) {
     return bouches.reduce((total, bouche) => total + (bouche.flowRate || 0), 0);
 }
 
@@ -42,7 +42,7 @@ export function calculateTotalFlow(bouches) {
  * @param {Array} caissons - Tableau des caissons
  * @returns {Array} Tableau des conduits avec les débits mis à jour
  */
-export function calculateConduitFlows(conduits, bouches, caissons) {
+window.calculateConduitFlows = function(conduits, bouches, caissons) {
     // Créer une carte des éléments par ID
     const elementsMap = new Map();
     [...bouches, ...caissons].forEach(el => elementsMap.set(el.id, el));
@@ -76,7 +76,7 @@ export function calculateConduitFlows(conduits, bouches, caissons) {
  * @param {Map} networkGraph - Graphe du réseau (elementId -> [connectedElementIds])
  * @returns {number} Débit dans le conduit
  */
-export function calculateConduitFlow(conduit, bouches, conduits, networkGraph) {
+window.calculateConduitFlow = function(conduit, bouches, conduits, networkGraph) {
     // Si le conduit est connecté directement à une bouche, retourner le débit de la bouche
     const startElement = findElementById(conduit.startElementId, bouches, conduits);
     const endElement = findElementById(conduit.endElementId, bouches, conduits);
@@ -115,7 +115,7 @@ function findElementById(id, bouches, conduits, caissons = []) {
  * @param {number} maxVelocity - Vitesse maximale en m/s
  * @returns {number} Diamètre en mm
  */
-export function sizeRoundConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN) {
+window.sizeRoundConduit = function(flowRate, maxVelocity = MAX_VELOCITY_MAIN) {
     if (flowRate <= 0) return window.STANDARD_DIAMETERS[0];
 
     // Convertir le débit de m³/h à m³/s
@@ -139,7 +139,7 @@ export function sizeRoundConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN) {
  * @param {number} aspectRatio - Rapport largeur/hauteur (optionnel)
  * @returns {Object} Objet avec width et height en mm
  */
-export function sizeRectConduit(flowRate, maxVelocity = MAX_VELOCITY_MAIN, aspectRatio = 2) {
+window.sizeRectConduit = function(flowRate, maxVelocity = MAX_VELOCITY_MAIN, aspectRatio = 2) {
     if (flowRate <= 0) return window.STANDARD_RECT_SIZES[0];
 
     // Convertir le débit de m³/h à m³/s
@@ -206,7 +206,7 @@ function findClosestStandardRectSize(width, height) {
  * @param {boolean} isRound - Vrai si conduit rond
  * @returns {number} Vitesse en m/s
  */
-export function calculateVelocity(flowRate, diameter = 0, width = 0, height = 0, isRound = true) {
+window.calculateVelocity = function(flowRate, diameter = 0, width = 0, height = 0, isRound = true) {
     if (flowRate <= 0) return 0;
 
     // Convertir le débit de m³/h à m³/s
@@ -235,7 +235,7 @@ export function calculateVelocity(flowRate, diameter = 0, width = 0, height = 0,
  * @param {string} elementType - Type d'élément ('supply', 'extract', 'main')
  * @returns {Object} Objet avec valid (boolean) et message (string)
  */
-export function checkVelocityLimits(velocity, elementType = 'main') {
+window.checkVelocityLimits = function(velocity, elementType = 'main') {
     let maxVelocity;
     switch (elementType) {
         case 'supply':

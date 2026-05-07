@@ -514,8 +514,8 @@ window.VentilationApp = class VentilationApp {
         const endPoint = endElement.getClosestConnectionPoint(startElement.x, startElement.y);
         
         const conduit = new window.Conduit(
-            startwindow.Point.x, startwindow.Point.y,
-            endwindow.Point.x, endwindow.Point.y,
+            startPoint.x, startPoint.y,
+            endPoint.x, endPoint.y,
             isRound
         );
         
